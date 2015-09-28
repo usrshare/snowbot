@@ -13,8 +13,7 @@ enum ht_returncodes {
 };
 
 struct ht_item {
-	uint64_t key;
-	char* altkey;
+	char* key;
 	void* value;
 	struct ht_item* next;
 };
@@ -25,21 +24,13 @@ struct hashtable {
 	struct ht_item** items;
 };
 
-unsigned int hash(unsigned int n,uint64_t key);
-unsigned int hash_a(unsigned int n,char* altkey);
+unsigned int hash(unsigned int n,const char* restrict key);
 
 struct hashtable* ht_create2(unsigned int n, int unique);
 struct hashtable* ht_create(unsigned int n);
 
-int ht_insert(struct hashtable* ht, uint64_t key, void* value);
-int ht_insert_a(struct hashtable* ht, char* altkey, void* value);
-
-void* ht_search(struct hashtable* ht, uint64_t key);
-void* ht_search_ind(struct hashtable* ht, uint64_t key, int index);
-void* ht_search_a(struct hashtable* ht, char* altkey);
-
-int ht_delete(struct hashtable* ht, uint64_t key);
-int ht_delete_ind(struct hashtable* ht, uint64_t key, int index);
-int ht_delete_a(struct hashtable* ht, char* altkey);
+int ht_insert(struct hashtable* ht,  const char* restrict key, void* value);
+void* ht_search(struct hashtable* ht,const char* restrict key);
+int ht_delete(struct hashtable* ht,  const char* restrict key);
 
 #endif
