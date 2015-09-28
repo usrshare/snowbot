@@ -239,7 +239,7 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
     }
 
     respond(session,nick,channel,weathermsg);
-
+    return 0;
 }
 
 int handle_weather_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata, int cnt) {
@@ -313,6 +313,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
     }
     weathermsg = strrecat(weathermsg,weathertmp);
     respond(session,nick,channel,weathermsg);
+    return 0;
 }
 
 int load_location (const char* restrict params, struct weather_loc* wloc) {
@@ -346,6 +347,46 @@ int handle_msg(irc_session_t* session, const char* restrict nick, const char* re
 	    up->paste_text = NULL;
 	    up->paste_size = 0;
 
+	}
+	
+	if (strncmp(msg,".set",strlen(".set")) == 0) {
+
+	    char* msgcopy = strdup(msg);
+
+	    char* saveptr = NULL;
+
+	    char* cmd = strtok_r(msgcopy," ",&saveptr);
+	    char* param = strtok_r(NULL," ",&saveptr);
+	    char* pval = strtok_r(NULL," ",&saveptr);
+
+	    if (pval) {
+
+		int r = setparam(up, irc_save_params, sizeof(irc_save_params) / sizeof(*irc_save_params), param, pval);
+		if (r == 0) respond (session,nick,channel,"Parameter set successfully."); else respond (session,nick,channel,"Can't set parameter.");
+
+		//set parameter to value
+	    } else if (param) {
+		
+		char val[128];
+
+		int r = getparam(up, irc_save_params, sizeof(irc_save_params) / sizeof(*irc_save_params), param, val, 128);
+		if (r == 0) ircprintf (session,nick,channel,"%s = %s",param,val); else respond (session,nick,channel,"Can't get parameter.");
+
+		//get value of parameter and respond
+	    } else {
+		
+		char val[128];
+
+		for (unsigned int i = 0; i < (sizeof(irc_save_params) / sizeof(*irc_save_params)); i++) {
+		
+		    int r = getparam(up, irc_save_params, sizeof(irc_save_params) / sizeof(*irc_save_params), irc_save_params[i].name, val, 128);
+		    if (r == 0) ircprintf (session,nick,channel,"%s = %s",irc_save_params[i].name,val); else ircprintf (session,nick,channel,"%s = ???",irc_save_params[i].name);
+
+
+		}
+	    }
+
+	    free(msgcopy);
 	}
 	if (strcmp(msg,".w_c") == 0) {
 	    respond(session,nick,channel,"Weather responses set to Celsius.");

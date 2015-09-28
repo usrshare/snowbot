@@ -23,6 +23,9 @@ struct saveparam {
 	ptrdiff_t offset;
 };
 
+int setparam(void* data, struct saveparam* params, size_t paramcnt, const char* restrict name, const char* restrict value);
+int getparam(void* data, struct saveparam* params, size_t paramcnt, const char* restrict name, char* o_value, size_t o_size);
+
 int savedata(char* filename, void* data, struct saveparam* params, size_t paramcnt);
 int loaddata(char* filename, void* data, struct saveparam* params, size_t paramcnt);
 
