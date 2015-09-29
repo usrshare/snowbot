@@ -11,84 +11,84 @@
 #define APIURL "http://api.openweathermap.org/data/2.5/"
 
 const struct weather_id wids[] = {
-	{0,   "???",                            ""},
-	{201, "thunderstorm with rain",		""},
-	{202, "thunderstorm with heavy rain",	""},
-	{210, "light thunderstorm",		"t"},
-	{211, "thunderstorm",			"T"},
-	{212, "heavy thunderstorm",		"TT"},
-	{221, "ragged thunderstorm",		""},
-	{230, "thunderstorm with light drizzle",""},
-	{231, "thunderstorm with drizzle",	""},
-	{232, "thunderstorm with heavy drizzle",""},
-	{300, "light intensity drizzle",	""},
-	{301, "drizzle",			""},
-	{302, "heavy intensity drizzle",	""},
-	{310, "light intensity drizzle rain",	""},
-	{311, "drizzle rain",			""},
-	{312, "heavy intensity drizzle rain",	""},
-	{313, "shower rain and drizzle",	""},
-	{314, "heavy shower rain and drizzle",	""},
-	{321, "shower drizzle",			""},
-	{500, "light rain",			"r"},
-	{501, "moderate rain",			"rr"},
-	{502, "heavy intensity rain",		"R"},
-	{503, "very heavy rain",		"Rr"},
-	{504, "extreme rain",			"RR"},
-	{511, "freezing rain",			""},
-	{520, "light intensity shower rain",	"r"},
-	{521, "shower rain",			"R"},
-	{522, "heavy intensity shower rain",	"RR"},
-	{531, "ragged shower rain",		""},
-	{600, "light snow",			""},
-	{601, "snow",				"s"},
-	{602, "heavy snow",			"S"},
-	{611, "sleet",				""},
-	{612, "shower sleet",			""},
-	{615, "light rain and snow",		"rs"},
-	{616, "rain and snow",			"RS"},
-	{620, "light shower snow",		"ss"},
-	{621, "shower snow",			"Ss"},
-	{622, "heavy shower snow",		"SS"},
-	{701, "mist",				""},
-	{711, "smoke",				""},
-	{721, "haze",				""},
-	{731, "sand, dust whirls",		""},
-	{741, "fog",				"*"},
-	{751, "sand",				""},
-	{761, "dust",				""},
-	{762, "volcanic ash",			""},
-	{771, "squalls",			""},
-	{781, "tornado",			"@"},
-	{800, "clear sky",			""},
-	{801, "few clouds",			""},
-	{802, "scattered clouds",		""},
-	{803, "broken clouds",			""},
-	{804, "overcast clouds",		""},
-	{900, "tornado",			"@"},
-	{901, "tropical storm",			"#"},
-	{902, "hurricane",			"?"},
-	{903, "cold",				"-"},
-	{904, "hot",				"+"},
-	{905, "windy",				""},
-	{906, "hail",				""},
-	{951, "calm",				""},
-	{952, "light breeze",			""},
-	{953, "gentle breeze",			""},
-	{954, "moderate breeze",		""},
-	{955, "fresh breeze",			""},
-	{956, "strong breeze",			""},
-	{957, "high wind, near gale",		""},
-	{958, "gale",				"~"},
-	{959, "severe gale",			"~~"},
-	{960, "storm",				"#"},
-	{961, "violent storm",			"##"},
-	{962, "hurricane",			"?"},
+	{0,   "???",                            "??"},
+	{201, "thunderstorm with rain",		"\00307Tr\017"},
+	{202, "thunderstorm with heavy rain",	"\00307TR\017"},
+	{210, "light thunderstorm",		"\00307 t\017"},
+	{211, "thunderstorm",			"\00307 T\017"},
+	{212, "heavy thunderstorm",		"\00307TT\017"},
+	{221, "ragged thunderstorm",		"\00307T!\017"},
+	{230, "thunderstorm with light drizzle","\00307Td\017"},
+	{231, "thunderstorm with drizzle",	"\00307TD\017"},
+	{232, "thunderstorm with heavy drizzle","\00307TD\017"},
+	{300, "light intensity drizzle",	"\00311 d\017"},
+	{301, "drizzle",			"\00311dd\017"},
+	{302, "heavy intensity drizzle",	"\00311 D\017"},
+	{310, "light intensity drizzle rain",	"\00311dr\017"},
+	{311, "drizzle rain",			"\00311DR\017"},
+	{312, "heavy intensity drizzle rain",	"\00311DR\017"},
+	{313, "shower rain and drizzle",	"\00310dr\017"},
+	{314, "heavy shower rain and drizzle",	"\00310DR\017"},
+	{321, "shower drizzle",			"\00310 d\017"},
+	{500, "light rain",			"\00311 r\017"},
+	{501, "moderate rain",			"\00311rr\017"},
+	{502, "heavy intensity rain",		"\00311Rr\017"},
+	{503, "very heavy rain",		"\00311RR\017"},
+	{504, "extreme rain",			"\00311R!\017"},
+	{511, "freezing rain",			"\00312R-\017"},
+	{520, "light intensity shower rain",	"\00310 r\017"},
+	{521, "shower rain",			"\00310 R\017"},
+	{522, "heavy intensity shower rain",	"\00310RR\017"},
+	{531, "ragged shower rain",		"\00310R!\017"},
+	{600, "light snow",			"\00312 s\017"},
+	{601, "snow",				"\00312ss\017"},
+	{602, "heavy snow",			"\00312 S\017"},
+	{611, "sleet",				"sl"},
+	{612, "shower sleet",			"\00314sl\017"},
+	{615, "light rain and snow",		"\00312rs\017"},
+	{616, "rain and snow",			"\00312RS\017"},
+	{620, "light shower snow",		"\00302 s\017"},
+	{621, "shower snow",			"\00302ss\017"},
+	{622, "heavy shower snow",		"\00302 S\017"},
+	{701, "mist",				"mi"},
+	{711, "smoke",				"sm"},
+	{721, "haze",				"hz"},
+	{731, "sand, dust whirls",		"s@"},
+	{741, "fog",				"fg"},
+	{751, "sand",				"sd"},
+	{761, "dust",				"dt"},
+	{762, "volcanic ash",			"va"},
+	{771, "squalls",			"sq"},
+	{781, "tornado",			"\026 ?\026"}, //inverse
+	{800, "clear sky",		  	"\00308 *\017"}, //yellow
+	{801, "few clouds",			" c"},
+	{802, "scattered clouds",		" C"},
+	{803, "broken clouds",			"cc"},
+	{804, "overcast clouds",		"oc"},
+	{900, "tornado",			"\026 ?\026"},
+	{901, "tropical storm",			"\026t#\026"},
+	{902, "hurricane",			"\026H@\026"},
+	{903, "cold",			  	" -"},
+	{904, "hot",				" +"},
+	{905, "windy",				"~~"},
+	{906, "hail",				"\00312HL\017"},
+	{951, "calm",				"cm"},
+	{952, "light breeze",			"~1"},
+	{953, "gentle breeze",			"~2"},
+	{954, "moderate breeze",		"~3"},
+	{955, "fresh breeze",			"~4"},
+	{956, "strong breeze",			"~5"},
+	{957, "high wind, near gale",		"~6"},
+	{958, "gale",				"\002~7\017"}, //bold
+	{959, "severe gale",			"\002~8\017"}, //bold
+	{960, "storm",				"\026 #\017"}, //inverse
+	{961, "violent storm",			"\026##\017"}, //inverse
+	{962, "hurricane",			"\026H@\017"}, //inverse
 };
 
 const struct weather_id* getwid(int id) {
 
-	for (int i=0; i < (sizeof(wids) / sizeof(*wids)); i++)
+	for (unsigned int i=0; i < (sizeof(wids) / sizeof(*wids)); i++)
 		if (wids[i].id == id) return &wids[i];
 	
 	return &wids[0];
@@ -690,14 +690,14 @@ const char* get_status_string(int w_id) {
 	}
 }
 
-int get_short_status (struct weather_data* weather, char* o_str){
+int get_short_status (int idc, int* idv, char* o_str){
 
 	o_str[0] = 0;
 
-	for (int i=0; i < (weather->weather_c); i++) {
+	for (int i=0; i < idc; i++) {
 
-		int w_id = weather->weather_id[i];
-		strcatunique(o_str,get_status_string(w_id));
+		int w_id = idv[i];
+		strcatunique(o_str,getwid(w_id)->symbol);
 	}
 
 	return 0;

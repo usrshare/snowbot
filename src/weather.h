@@ -75,7 +75,7 @@ int get_current_weather( struct weather_loc* params, struct weather_data* o_resp
 
 const char* describe_wind_direction(float deg); //returns a string that describes the degree value.
 
-int get_short_status (struct weather_data* weather, char* o_str);
+int get_short_status (int idc, int* idv, char* o_str);
 
 int get_weather_forecast(struct weather_loc* loc, struct weather_data* o_wd, int cnt);
 

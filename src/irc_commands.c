@@ -113,7 +113,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
 			     memset(weathertmp,0,sizeof weathertmp);
 			     for (int i=0; i<cnt; i++) {
-				 snprintf(weathertmp2,16,"%3d",(int)round((wdata+i)->temp_day - 273.15f));
+				 snprintf(weathertmp2,16,"%3d%3d.",(int)round((wdata+i)->temp_day - 273.15f),(int)round((wdata+i)->temp_night - 273.15f));
 				 strcat(weathertmp,weathertmp2);
 			     }
 			     weathermsg = strrecat(weathermsg,weathertmp);
@@ -126,7 +126,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
 				memset(weathertmp,0,sizeof weathertmp);
 				for (int i=0; i<cnt; i++) {
-				    snprintf(weathertmp2,16,"%3d",(int)round(( ((wdata+i)->temp_day - 273.15f)*1.8f)+32.0f));
+				    snprintf(weathertmp2,16,"%3d%3d.",(int)round(( ((wdata+i)->temp_day - 273.15f)*1.8f)+32.0f),(int)round(( ((wdata+i)->temp_night - 273.15f)*1.8f)+32.0f));
 				    strcat(weathertmp,weathertmp2);
 				}
 				weathermsg = strrecat(weathermsg,weathertmp);
@@ -135,8 +135,11 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 				break; }
     }
 
+    int wcnt = 0;
+    for (int i=0; i<cnt; i++)
+	if ((wdata+i)->weather_c > wcnt) wcnt = (wdata+i)->weather_c;
 
-
+    for (int c=0; c < wcnt; c++) {
 
     snprintf (weathermsg,128,"sp:");
 
@@ -144,12 +147,13 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
     char weathertmp3[16];
     for (int i=0; i<cnt; i++) {
 
-	//get_short_status(wdata+i,weathertmp3);
-	snprintf(weathertmp2,16,"%3s",weathertmp3);
+	snprintf(weathertmp2,16,"  %s  .",getwid((wdata+i)->weather_id[c])->symbol);
 	strcat(weathertmp,weathertmp2);
     }
     weathermsg = strrecat(weathermsg,weathertmp);
     respond(session,nick,channel,weathermsg);
+    }
+
     return 0;
 }
 int handle_weather_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata, int cnt) {
@@ -208,8 +212,12 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 				break; }
     }
 
+    int wcnt = 0;
+    for (int i=0; i<cnt; i++)
+	if ((wdata+i)->weather_c > wcnt) wcnt = (wdata+i)->weather_c;
 
 
+    for (int c=0; c < wcnt; c++) {
 
     snprintf (weathermsg,128,"sp:");
 
@@ -217,12 +225,12 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
     char weathertmp3[16];
     for (int i=0; i<cnt; i++) {
 
-	get_short_status(wdata+i,weathertmp3);
-	snprintf(weathertmp2,16,"%3s",weathertmp3);
+	snprintf(weathertmp2,16," %s",getwid((wdata+i)->weather_id[c])->symbol);
 	strcat(weathertmp,weathertmp2);
     }
     weathermsg = strrecat(weathermsg,weathertmp);
     respond(session,nick,channel,weathermsg);
+    }
     return 0;
 }
 
@@ -314,6 +322,42 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
     return 0;
 }	
 
+int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+
+    struct weather_loc wloc;
+    memset(&wloc,0,sizeof wloc);
+
+    if ((strlen(argv[0]) == 4) && (!up->cityid)) {
+	respond(session,nick,channel,"Usage: .owl <# of days> #<OWM city ID>, .owm <zip code>[,<2char country code>], .owm <city name>[,<2char country code>], .owm <longitude>,<latitude>"); return 0; }
+
+    const char* _oswparams = argv[0]+4;
+
+    int cnt = 0;
+
+    char* oswparams = NULL;
+
+    cnt = strtol(_oswparams,&oswparams,10);
+
+    if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 7; if (cnt>16) cnt=16;
+
+    struct forecast_data wdata[cnt];
+    memset(&wdata,0,sizeof wdata);
+
+    if (!oswparams) {respond(session,nick,channel,"Can't see the number of intervals. Sorry."); return 0;} 
+
+    int r = load_location(oswparams,up,&wloc);
+
+    if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
+
+	get_long_forecast( &wloc, wdata, cnt);
+	handle_long_forecast( session, nick, channel, &wloc, wdata, cnt);
+
+    }
+    return 0;
+}	
+
 int load_cmd_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
     int r = load_user_params(nick,up);
@@ -385,6 +429,7 @@ struct irc_user_commands cmds[] = {
     {".w_f", false, weather_fahrenheit_cb},
     {".owm", true, weather_current_cb},
     {".owf", true, weather_forecast_cb},
+    {".owl", true, weather_longforecast_cb},
     {".about", false, NULL},
 };
 
@@ -395,7 +440,7 @@ int handle_commands(irc_session_t* session, const char* restrict nick,const char
 
     const char* msgv[20]; msgv[0] = msgparse; int msgcur = 0;
 
-    int i=0,o=0; bool escaping = false;
+    unsigned int i=0,o=0; bool escaping = false;
 
     while (i < strlen(msg)) {
 	switch (msg[i]) {
@@ -422,7 +467,7 @@ int handle_commands(irc_session_t* session, const char* restrict nick,const char
 
     int r = 1;
 
-    for (int i=0; i < (sizeof(cmds) / sizeof(*cmds)); i++) {
+    for (unsigned int i=0; i < (sizeof(cmds) / sizeof(*cmds)); i++) {
 
 	if ((strcmp(cmds[i].name, msgv[0]) == 0) && (cmds[i].cb)) {
 
