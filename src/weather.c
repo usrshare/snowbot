@@ -10,6 +10,89 @@
 #define APPID "0e967742c178e97ee34f6fee12183a89"
 #define APIURL "http://api.openweathermap.org/data/2.5/"
 
+const struct weather_id wids[] = {
+	{0,   "???",                            ""},
+	{201, "thunderstorm with rain",		""},
+	{202, "thunderstorm with heavy rain",	""},
+	{210, "light thunderstorm",		"t"},
+	{211, "thunderstorm",			"T"},
+	{212, "heavy thunderstorm",		"TT"},
+	{221, "ragged thunderstorm",		""},
+	{230, "thunderstorm with light drizzle",""},
+	{231, "thunderstorm with drizzle",	""},
+	{232, "thunderstorm with heavy drizzle",""},
+	{300, "light intensity drizzle",	""},
+	{301, "drizzle",			""},
+	{302, "heavy intensity drizzle",	""},
+	{310, "light intensity drizzle rain",	""},
+	{311, "drizzle rain",			""},
+	{312, "heavy intensity drizzle rain",	""},
+	{313, "shower rain and drizzle",	""},
+	{314, "heavy shower rain and drizzle",	""},
+	{321, "shower drizzle",			""},
+	{500, "light rain",			"r"},
+	{501, "moderate rain",			"rr"},
+	{502, "heavy intensity rain",		"R"},
+	{503, "very heavy rain",		"Rr"},
+	{504, "extreme rain",			"RR"},
+	{511, "freezing rain",			""},
+	{520, "light intensity shower rain",	"r"},
+	{521, "shower rain",			"R"},
+	{522, "heavy intensity shower rain",	"RR"},
+	{531, "ragged shower rain",		""},
+	{600, "light snow",			""},
+	{601, "snow",				"s"},
+	{602, "heavy snow",			"S"},
+	{611, "sleet",				""},
+	{612, "shower sleet",			""},
+	{615, "light rain and snow",		"rs"},
+	{616, "rain and snow",			"RS"},
+	{620, "light shower snow",		"ss"},
+	{621, "shower snow",			"Ss"},
+	{622, "heavy shower snow",		"SS"},
+	{701, "mist",				""},
+	{711, "smoke",				""},
+	{721, "haze",				""},
+	{731, "sand, dust whirls",		""},
+	{741, "fog",				"*"},
+	{751, "sand",				""},
+	{761, "dust",				""},
+	{762, "volcanic ash",			""},
+	{771, "squalls",			""},
+	{781, "tornado",			"@"},
+	{800, "clear sky",			""},
+	{801, "few clouds",			""},
+	{802, "scattered clouds",		""},
+	{803, "broken clouds",			""},
+	{804, "overcast clouds",		""},
+	{900, "tornado",			"@"},
+	{901, "tropical storm",			"#"},
+	{902, "hurricane",			"?"},
+	{903, "cold",				"-"},
+	{904, "hot",				"+"},
+	{905, "windy",				""},
+	{906, "hail",				""},
+	{951, "calm",				""},
+	{952, "light breeze",			""},
+	{953, "gentle breeze",			""},
+	{954, "moderate breeze",		""},
+	{955, "fresh breeze",			""},
+	{956, "strong breeze",			""},
+	{957, "high wind, near gale",		""},
+	{958, "gale",				"~"},
+	{959, "severe gale",			"~~"},
+	{960, "storm",				"#"},
+	{961, "violent storm",			"##"},
+	{962, "hurricane",			"?"},
+};
+
+const struct weather_id* getwid(int id) {
+
+	for (int i=0; i < (sizeof(wids) / sizeof(*wids)); i++)
+		if (wids[i].id == id) return &wids[i];
+	
+	return &wids[0];
+}
 float strtof2(char* string) {
 	float res = strtof(string,NULL);
 	if (errno) return nan("lol");
@@ -124,10 +207,38 @@ int fill_json_wdesc_fields2(void* out, enum json_type ft, const char* fn, json_o
 	int i = nw->weather_c;
 
 	if (s_eq(fn,"id")) { nw->weather_id[i] = json_object_get_int(fv); return 0;}
-	if (s_eq(fn,"main")) { if (i>0) strcat(nw->main," / "); strncat(nw->main,json_object_get_string(fv),32); return 0;}
-	if (s_eq(fn,"description")) { if (i>0) strcat(nw->description," / "); strncat(nw->description,json_object_get_string(fv),32); return 0;}
+	if (s_eq(fn,"main")) { return 0;}
+	if (s_eq(fn,"description")) { return 0;}
 
 	return 1;	
+}
+
+int fill_json_fdesc_fields2(void* out, enum json_type ft, const char* fn, json_object* fv) {
+	if (fv == NULL) return 1;
+	struct forecast_data* nf = out;
+
+	int i = nf->weather_c;
+
+	if (s_eq(fn,"id")) { nf->weather_id[i] = json_object_get_int(fv); return 0;}
+	if (s_eq(fn,"main")) { return 0;}
+	if (s_eq(fn,"description")) { return 0;}
+
+	return 1;	
+}
+
+int fill_json_temp_fields(void* out, enum json_type ft, const char* fn, json_object* fv) {
+	if (fv == NULL) return 1;
+	struct forecast_data* nf = out;
+
+	if (s_eq(fn,"day")) { nf->temp_day = json_object_get_double(fv); if (errno) nf->temp_day = -1.0; return 0;}
+	if (s_eq(fn,"night")) { nf->temp_night = json_object_get_double(fv); if (errno) nf->temp_night = -1.0; return 0;}
+	if (s_eq(fn,"morn")) { nf->temp_morn = json_object_get_double(fv); if (errno) nf->temp_morn = -1.0; return 0;}
+	if (s_eq(fn,"eve")) { nf->temp_eve = json_object_get_double(fv); if (errno) nf->temp_eve = -1.0; return 0;}
+	if (s_eq(fn,"min")) { nf->temp_min = json_object_get_double(fv); if (errno) nf->temp_min = -1.0; return 0;}
+	if (s_eq(fn,"max")) { nf->temp_max = json_object_get_double(fv); if (errno) nf->temp_max = -1.0; return 0;}
+
+	return 1;	
+
 }
 
 int fill_json_wdesc_array(void* out, json_object* fv) {
@@ -143,6 +254,23 @@ int fill_json_wdesc_array(void* out, json_object* fv) {
 		parse_json_object(afv,nw,fill_json_wdesc_fields2);
 
 		nw->weather_c++;
+	}
+	return 1;	
+}
+
+int fill_json_fdesc_array(void* out, json_object* fv) {
+	if (fv == NULL) return 1;
+	struct forecast_data* nf = out;
+
+	int descs = json_object_array_length(fv);
+
+	for (int i=0; i < descs; i++) {
+
+		struct json_object* afv = json_object_array_get_idx(fv,i);
+
+		parse_json_object(afv,nf,fill_json_fdesc_fields2);
+
+		nf->weather_c++;
 	}
 	return 1;	
 }
@@ -190,6 +318,28 @@ int fill_json_wfore_fields(void* out, enum json_type ft, const char* fn, json_ob
 	return 1;
 }
 
+int fill_json_wlfore_fields(void* out, enum json_type ft, const char* fn, json_object* fv) {
+	if (fv == NULL) return 1;
+	struct forecast_data* nf = out;
+
+	if (s_eq(fn,"dt")) { nf->dt = json_object_get_int64(fv); return 0;}
+
+	if (s_eq(fn,"temp")) { parse_json_object(fv,nf,fill_json_temp_fields); return 0;}
+	if (s_eq(fn,"weather")) { fill_json_fdesc_array(nf,fv); return 0;}
+	
+	if (s_eq(fn,"speed")) { nf->wind_speed = json_object_get_double(fv); if (errno) nf->wind_speed = -1.0; return 0;}
+	if (s_eq(fn,"deg")) { nf->wind_deg = json_object_get_int(fv); return 0;}
+	if (s_eq(fn,"clouds")) { nf->clouds = json_object_get_int(fv); return 0;}
+	if (s_eq(fn,"rain")) { nf->rain = json_object_get_double(fv); if (errno) nf->rain = -1.0; return 0;}
+	if (s_eq(fn,"snow")) { nf->snow = json_object_get_double(fv); if (errno) nf->snow = -1.0; return 0;}
+	if (s_eq(fn,"humidity")) { nf->humidity = json_object_get_int(fv); return 0;}
+
+	if (s_eq(fn,"cod")) { return 0; } //ignore
+	if (s_eq(fn,"base")) { return 0; } //ignore
+
+	return 1;
+}
+
 int fill_json_forecast_list_array(struct weather_data* nw, json_object* fv, int cnt) {
 	if (fv == NULL) return 1;
 
@@ -199,6 +349,20 @@ int fill_json_forecast_list_array(struct weather_data* nw, json_object* fv, int 
 
 		struct json_object* afv = json_object_array_get_idx(fv,i);
 		parse_json_object(afv,nw+i,fill_json_wfore_fields);
+
+	}
+	return 1;	
+}
+
+int fill_json_longforecast_list_array(struct forecast_data* nf, json_object* fv, int cnt) {
+	if (fv == NULL) return 1;
+
+	int descs = json_object_array_length(fv);
+
+	for (int i=0; i < descs; i++) {
+
+		struct json_object* afv = json_object_array_get_idx(fv,i);
+		parse_json_object(afv,nf+i,fill_json_wlfore_fields);
 
 	}
 	return 1;	
@@ -214,6 +378,23 @@ int fill_json_forecast_fields(struct weather_data* nw, struct weather_loc* loc, 
 	if (s_eq(fn,"city")) { parse_json_object(fv,loc,fill_json_city_fields); return 0;}
 
 	if (s_eq(fn,"list")) { fill_json_forecast_list_array(nw,fv,*cnt); return 0;}
+
+	if (s_eq(fn,"cod")) { return 0; } //ignore
+	if (s_eq(fn,"message")) { return 0; } //ignore
+
+	return 1;
+}
+
+int fill_json_longforecast_fields(struct forecast_data* nf, struct weather_loc* loc, enum json_type ft, const char* fn, json_object* fv, int* cnt) {
+	if (fv == NULL) return 1;
+
+	int _cnt=0;
+
+	if (s_eq(fn,"cnt")) { _cnt = json_object_get_int64(fv); if (*cnt < _cnt) {return 2;} else {*cnt = _cnt;} return 0;}
+
+	if (s_eq(fn,"city")) { parse_json_object(fv,loc,fill_json_city_fields); return 0;}
+
+	if (s_eq(fn,"list")) { fill_json_longforecast_list_array(nf,fv,*cnt); return 0;}
 
 	if (s_eq(fn,"cod")) { return 0; } //ignore
 	if (s_eq(fn,"message")) { return 0; } //ignore
@@ -268,6 +449,29 @@ int parse_json_forecast(json_object* weather, struct weather_data* o_wd, struct 
 	return 0;
 }
 
+int parse_json_longforecast(json_object* weather, struct forecast_data* o_fd, struct weather_loc* o_loc, int cnt) {
+	struct json_object_iterator it_c, it_e;
+	it_c = json_object_iter_begin(weather);
+	it_e = json_object_iter_end(weather);
+
+	const char* fn; json_object* fv; enum json_type ft;
+
+	while (!json_object_iter_equal(&it_c,&it_e)) {
+
+		fn = json_object_iter_peek_name(&it_c);
+		fv = json_object_iter_peek_value(&it_c);
+		ft = json_object_get_type(fv);
+
+		if (fill_json_longforecast_fields(o_fd,o_loc,ft,fn,fv,&cnt))
+			printf("unparsed longforecast field %s\n", fn);
+
+		json_object_iter_next(&it_c);
+
+	}
+
+	return 0;
+}
+
 int parse_forecast_response(char* response, struct weather_data* o_wd, struct weather_loc* o_loc, int cnt) {
 
 	struct json_tokener* jt = json_tokener_new();
@@ -288,6 +492,25 @@ int parse_forecast_response(char* response, struct weather_data* o_wd, struct we
 	return 0;
 }
 
+int parse_longforecast_response(char* response, struct forecast_data* o_fd, struct weather_loc* o_loc, int cnt) {
+
+	struct json_tokener* jt = json_tokener_new();
+	enum json_tokener_error jerr;
+
+	struct json_object* wobj = json_tokener_parse_ex(jt,response,strlen(response));
+	jerr = json_tokener_get_error(jt);
+	if (jerr != json_tokener_success) {
+		printf("JSON Tokener Error: %s\n",json_tokener_error_desc(jerr));
+	}
+
+	if (json_object_get_type(wobj) != json_type_object) {
+		printf("Something is wrong. Timeline's JSON isn't an object, but a %s\n",json_type_to_name(json_object_get_type(wobj)));
+		return 1; }
+
+	int curw = parse_json_longforecast(wobj,o_fd,o_loc,cnt);
+	json_tokener_free(jt);
+	return 0;
+}
 
 int parse_current_response(char* response, struct weather_data* o_wd, struct weather_loc* o_loc) {
 
@@ -351,6 +574,26 @@ int make_weather_url_f(struct weather_loc* loc, char* fullurl,int cnt) {
 	return 1;
 }
 
+int make_weather_url_lf(struct weather_loc* loc, char* fullurl,int cnt) {
+
+	if (loc->city_id) {
+		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&id=%d",cnt,loc->city_id); return 0; }
+
+	if (loc->zipcode) {
+		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&zip=%d,%s",
+				cnt,loc->zipcode,strlen(loc->sys_country) ? loc->sys_country : "us"); return 0; } //default country
+
+	if (strlen(loc->city_name) && strlen(loc->sys_country)) {
+		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&q=%s,%s",cnt,loc->city_name,loc->sys_country); return 0; }
+
+	if (strlen(loc->city_name)) {
+		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&q=%s",cnt,loc->city_name); return 0; }
+
+	if ((fabs(loc->coord_lon) < 180.0f) && (fabs(loc->coord_lat) < 90.0f)) {
+		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&lat=%f&lon=%f",cnt,loc->coord_lat,loc->coord_lon); return 0;}
+
+	return 1;
+}
 int get_current_weather(struct weather_loc* loc, struct weather_data* o_wd) {
 
 	o_wd->main_humidity = -1;
@@ -383,6 +626,20 @@ int get_weather_forecast(struct weather_loc* loc, struct weather_data* o_wd, int
 	return cnt; //returns the count of responses received.
 }
 
+int get_long_forecast(struct weather_loc* loc, struct forecast_data* o_fd, int cnt) {
+
+	char fullurl[256];
+	make_weather_url_lf(loc,fullurl,cnt);
+
+	printf("URL: %s\n",fullurl);
+
+	char* response = make_http_request(fullurl,NULL);
+
+	//printf("Response: %s\n", response);
+
+	parse_longforecast_response(response,o_fd,loc,cnt);
+	return cnt; //returns the count of responses received.
+}
 
 const char* describe_wind_direction(float deg) {
 
@@ -409,7 +666,7 @@ const char* describe_wind_direction(float deg) {
 int strcatunique(char* dest, const char* restrict src) {
 
 	if (!src) return 0;
-	if (!strstr(dest,src)) return strcat(dest,src);
+	if (!strstr(dest,src)) { strcat(dest,src); return 0;}
 	return 0;
 }
 

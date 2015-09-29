@@ -1,0 +1,63 @@
+#include "irc_user.h"
+#include "hashtable.h"
+#include <stdio.h>
+#include <malloc.h>
+#include <string.h>
+
+struct hashtable* userht = NULL;
+
+struct saveparam irc_save_params[] = {
+    {"wmode",ST_UINT32,0,offsetof(struct irc_user_params,wmode)},
+    {"cityid",ST_UINT32,0,offsetof(struct irc_user_params,cityid)}
+};
+
+const size_t paramcnt = sizeof(irc_save_params) / sizeof(*irc_save_params);
+
+int save_user_params(const char* restrict nick, struct irc_user_params* up) {
+
+    char filename[16];
+    snprintf(filename,16,"%.9s.dat",nick);
+
+    return savedata(filename,up,irc_save_params,(sizeof(irc_save_params) / sizeof(*irc_save_params)) ); 
+}
+
+int load_user_params(const char* restrict nick, struct irc_user_params* up) {
+
+    char filename[16];
+    snprintf(filename,16,"%.9s.dat",nick);
+
+    return loaddata(filename,up,irc_save_params,(sizeof(irc_save_params) / sizeof(*irc_save_params)) ); 
+}
+
+
+struct irc_user_params* get_user_params(const char* restrict nick, enum empty_beh add_if_empty) {
+
+    if (!userht) userht = ht_create(128);
+
+    void* p = ht_search(userht,nick);
+    if (p) return p;
+    if (!add_if_empty) return NULL;
+
+    struct irc_user_params* newparams = malloc(sizeof(struct irc_user_params));
+    memset(newparams,0,sizeof(struct irc_user_params));
+
+    if (add_if_empty == EB_LOAD) load_user_params(nick,newparams);
+
+    int r = ht_insert(userht,nick,newparams);
+
+    return newparams;
+}
+
+
+int del_user_params(const char* restrict nick, struct irc_user_params* value) {
+
+    if (!userht) return 1;
+
+    void* p = ht_search(userht,nick);
+    if (!p) return 1;
+
+    free(p);
+    ht_delete(userht,nick);
+
+    return 0;
+}

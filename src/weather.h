@@ -4,11 +4,18 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+struct weather_id {
+	int id;
+	const char* description;
+	const char* symbol;
+};
+
+extern const struct weather_id wids[];
+
+const struct weather_id* getwid(int id);
+
 struct weather_data {
 	
-	char main[256+21];
-	char description[512+21];
-
 	int weather_id[8];
 	int weather_c;
 
@@ -29,6 +36,30 @@ struct weather_data {
 	time_t sys_sunset;
 };
 
+struct forecast_data {
+
+	time_t dt;
+	float temp_day;
+	float temp_min;
+	float temp_max;
+	float temp_night;
+	float temp_eve;
+	float temp_morn;
+
+	float pressure;
+	int humidity;
+	
+	int weather_id[8];
+	int weather_c;
+
+	float wind_speed;
+	float wind_deg;
+	float clouds;
+	float rain;
+	float snow;
+
+};
+
 struct weather_loc {
 	float coord_lon;
 	float coord_lat;
@@ -47,5 +78,7 @@ const char* describe_wind_direction(float deg); //returns a string that describe
 int get_short_status (struct weather_data* weather, char* o_str);
 
 int get_weather_forecast(struct weather_loc* loc, struct weather_data* o_wd, int cnt);
+
+int get_long_forecast(struct weather_loc* loc, struct forecast_data* o_fc, int cnt);
 
 #endif
