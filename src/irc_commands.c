@@ -98,7 +98,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
     for (int i=0; i<cnt; i++) {
 
 	gmtime_r(&((wdata+i)->dt), &weathertime);
-	snprintf(weathertmp2,16,"  %2d  .",weathertime.tm_mday);
+	snprintf(weathertmp2,16,"  %2d  |",weathertime.tm_mday);
 	strcat(weathertmp,weathertmp2);
     }
 
@@ -113,7 +113,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
 			     memset(weathertmp,0,sizeof weathertmp);
 			     for (int i=0; i<cnt; i++) {
-				 snprintf(weathertmp2,16,"%3d%3d.",(int)round((wdata+i)->temp_day - 273.15f),(int)round((wdata+i)->temp_night - 273.15f));
+				 snprintf(weathertmp2,16,"\00308%-3d\00312%3d\017|",(int)round((wdata+i)->temp_day - 273.15f),(int)round((wdata+i)->temp_night - 273.15f));
 				 strcat(weathertmp,weathertmp2);
 			     }
 			     weathermsg = strrecat(weathermsg,weathertmp);
@@ -126,7 +126,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
 				memset(weathertmp,0,sizeof weathertmp);
 				for (int i=0; i<cnt; i++) {
-				    snprintf(weathertmp2,16,"%3d%3d.",(int)round(( ((wdata+i)->temp_day - 273.15f)*1.8f)+32.0f),(int)round(( ((wdata+i)->temp_night - 273.15f)*1.8f)+32.0f));
+				    snprintf(weathertmp2,16,"\00308%-3d\00312%3d\017|",(int)round(( ((wdata+i)->temp_day - 273.15f)*1.8f)+32.0f),(int)round(( ((wdata+i)->temp_night - 273.15f)*1.8f)+32.0f));
 				    strcat(weathertmp,weathertmp2);
 				}
 				weathermsg = strrecat(weathermsg,weathertmp);
@@ -141,17 +141,17 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
     for (int c=0; c < wcnt; c++) {
 
-    snprintf (weathermsg,128,"sp:");
+	snprintf (weathermsg,128,"sp:");
 
-    memset(weathertmp,0,sizeof weathertmp);
-    char weathertmp3[16];
-    for (int i=0; i<cnt; i++) {
+	memset(weathertmp,0,sizeof weathertmp);
+	char weathertmp3[16];
+	for (int i=0; i<cnt; i++) {
 
-	snprintf(weathertmp2,16,"  %s  .",getwid((wdata+i)->weather_id[c])->symbol);
-	strcat(weathertmp,weathertmp2);
-    }
-    weathermsg = strrecat(weathermsg,weathertmp);
-    respond(session,nick,channel,weathermsg);
+	    snprintf(weathertmp2,16,"  %s  |",getwid((wdata+i)->weather_id[c])->symbol);
+	    strcat(weathertmp,weathertmp2);
+	}
+	weathermsg = strrecat(weathermsg,weathertmp);
+	respond(session,nick,channel,weathermsg);
     }
 
     return 0;
@@ -219,17 +219,17 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
     for (int c=0; c < wcnt; c++) {
 
-    snprintf (weathermsg,128,"sp:");
+	snprintf (weathermsg,128,"sp:");
 
-    memset(weathertmp,0,sizeof weathertmp);
-    char weathertmp3[16];
-    for (int i=0; i<cnt; i++) {
+	memset(weathertmp,0,sizeof weathertmp);
+	char weathertmp3[16];
+	for (int i=0; i<cnt; i++) {
 
-	snprintf(weathertmp2,16," %s",getwid((wdata+i)->weather_id[c])->symbol);
-	strcat(weathertmp,weathertmp2);
-    }
-    weathermsg = strrecat(weathermsg,weathertmp);
-    respond(session,nick,channel,weathermsg);
+	    snprintf(weathertmp2,16," %s",getwid((wdata+i)->weather_id[c])->symbol);
+	    strcat(weathertmp,weathertmp2);
+	}
+	weathermsg = strrecat(weathermsg,weathertmp);
+	respond(session,nick,channel,weathermsg);
     }
     return 0;
 }
@@ -374,6 +374,17 @@ int save_cmd_cb (irc_session_t* session, const char* restrict nick, const char* 
     return 0;
 
 }
+int utc_cmd_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    time_t utc = time(NULL);
+    char buf[30];
+
+    ctime_r(&utc,buf);
+
+    ircprintf(session,nick,channel,"Current time in UTC: %s", buf);
+    return 0;
+
+}
 
 int set_cmd_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
@@ -425,6 +436,7 @@ struct irc_user_commands cmds[] = {
     {".load", false, load_cmd_cb},
     {".save", false, save_cmd_cb},
     {".set", false, set_cmd_cb},
+    {".utc", false, utc_cmd_cb},
     {".w_c", false, weather_celsius_cb},
     {".w_f", false, weather_fahrenheit_cb},
     {".owm", true, weather_current_cb},
