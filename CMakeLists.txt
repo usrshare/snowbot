@@ -23,7 +23,8 @@ add_executable (snowbot
 		src/paste.c
 		src/savefile.c
 		src/weather.c
-	       )
+	       	src/xrates.c
+		)
 
 include_directories(${CMAKE_SOURCE_DIR}/libircclient/libircclient/include)
 

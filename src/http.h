@@ -1,5 +1,6 @@
 #ifndef HTTP_H
 #define HTTP_H
+#include <stdbool.h>
 
 extern bool curl_initialized;
 

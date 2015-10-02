@@ -8,6 +8,7 @@
 #include "irc_user.h"
 
 #include "weather.h"
+#include "xrates.h"
 
 #include <math.h>
 #include <time.h>
@@ -38,8 +39,11 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
     weathermsg = strrecat(weathermsg,": ");
 
     for (int i=0; i < (wdata->weather_c); i++) {
-	weathermsg = strrecat(weathermsg,getwid(wdata->weather_id[i])->description);
-	weathermsg = strrecat(weathermsg,", ");
+	const struct weather_id* wid = getwid(wdata->weather_id[i]);
+	if (wid->format_on)
+	    snprintf(weathertmp,256,"%s%s%s,",wid->format_on,wid->description,wid->format_off); else
+		snprintf(weathertmp,256,"%s,",wid->description);
+	weathermsg = strrecat(weathermsg,weathertmp);
     }
 
     if (up->wmode == WM_CELSIUS)
@@ -67,7 +71,18 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
     }
 
     if (wdata->wind_speed >= 0.0) {
-	snprintf(weathertmp,255,", wind: %.1f m/s (%.1f mph)", wdata->wind_speed, wdata->wind_speed * 2.23694f);
+
+	int wspd = (int) round(wdata->wind_speed);
+
+	char* fmtst = ""; char* fmted = "";
+
+	if (wspd >= 30) fmtst = "\026"; else
+	    if (wspd >= 25) fmtst = "\00304"; else
+		if (wspd >= 17) fmtst = "\00308"; else
+		    if (wspd >= 10) fmtst = "\00309";
+
+	if (wspd >= 10) fmted = "\017";
+	snprintf(weathertmp,255,", wind: %s%.1f%s m/s (%s%.1f%s mph)", fmtst,wdata->wind_speed,fmted, fmtst,wdata->wind_speed * 2.23694f,fmted);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
 
@@ -135,6 +150,26 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 				break; }
     }
 
+    snprintf (weathermsg,128,"wd:");
+
+    for (int i=0; i<cnt; i++) {
+
+	int wspd = (int) round((wdata+i)->wind_speed);
+
+	char* fmtst = ""; char* fmted = "";
+
+	if (wspd >= 30) fmtst = "\026"; else
+	    if (wspd >= 25) fmtst = "\00304"; else
+		if (wspd >= 17) fmtst = "\00308"; else
+		    if (wspd >= 10) fmtst = "\00309";
+
+	if (wspd >= 10) fmted = "\017";
+	snprintf(weathertmp,255,"%s %4.1f %s|", fmtst,(wdata+i)->wind_speed,fmted);
+	weathermsg = strrecat(weathermsg,weathertmp);
+    }
+
+    respond(session,nick,channel,weathermsg);
+
     int wcnt = 0;
     for (int i=0; i<cnt; i++)
 	if ((wdata+i)->weather_c > wcnt) wcnt = (wdata+i)->weather_c;
@@ -144,10 +179,14 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 	snprintf (weathermsg,128,"sp:");
 
 	memset(weathertmp,0,sizeof weathertmp);
-	char weathertmp3[16];
+	//char weathertmp3[16];
 	for (int i=0; i<cnt; i++) {
 
-	    snprintf(weathertmp2,16,"  %s  |",getwid((wdata+i)->weather_id[c])->symbol);
+	    const struct weather_id* wid = getwid((wdata+i)->weather_id[c]);
+
+	    if (wid->format_on)
+		snprintf(weathertmp2,16,"  %s%s%s  |",wid->format_on,wid->symbol,wid->format_off); else
+		    snprintf(weathertmp2,16,"  %s  |",wid->symbol);
 	    strcat(weathertmp,weathertmp2);
 	}
 	weathermsg = strrecat(weathermsg,weathertmp);
@@ -190,7 +229,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
 			     memset(weathertmp,0,sizeof weathertmp);
 			     for (int i=0; i<cnt; i++) {
-				 snprintf(weathertmp2,16,"%3d",(int)round((wdata+i)->main_temp - 273.15f));
+				 snprintf(weathertmp2,16,"%3d",(int)round((wdata+i)->main_temp /*- 273.15f*/));
 				 strcat(weathertmp,weathertmp2);
 			     }
 			     weathermsg = strrecat(weathermsg,weathertmp);
@@ -203,7 +242,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
 				memset(weathertmp,0,sizeof weathertmp);
 				for (int i=0; i<cnt; i++) {
-				    snprintf(weathertmp2,16,"%3d",(int)round(( ((wdata+i)->main_temp - 273.15f)*1.8f)+32.0f));
+				    snprintf(weathertmp2,16,"%3d",(int)round(( ((wdata+i)->main_temp /*- 273.15f*/)*1.8f)+32.0f));
 				    strcat(weathertmp,weathertmp2);
 				}
 				weathermsg = strrecat(weathermsg,weathertmp);
@@ -212,20 +251,47 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 				break; }
     }
 
+    snprintf(weathermsg,128,"wd:");
+
+    memset(weathertmp,0,sizeof weathertmp);
+    for (int i=0; i<cnt; i++) {
+
+	int wspd = (int) round((wdata+i)->wind_speed);
+
+	char* fmtst = ""; char* fmted = "";
+
+	if (wspd >= 30) fmtst = "\026"; else
+	    if (wspd >= 25) fmtst = "\00304"; else
+		if (wspd >= 17) fmtst = "\00308"; else
+		    if (wspd >= 10) fmtst = "\00309";
+
+	if (wspd >= 10) fmted = "\017";
+
+	snprintf(weathertmp2,16,"%s%3d%s",fmtst,wspd,fmted);
+	strcat(weathertmp,weathertmp2);
+    }
+
+    weathermsg = strrecat(weathermsg,weathertmp);
+    respond(session,nick,channel,weathermsg);
+
     int wcnt = 0;
     for (int i=0; i<cnt; i++)
 	if ((wdata+i)->weather_c > wcnt) wcnt = (wdata+i)->weather_c;
-
 
     for (int c=0; c < wcnt; c++) {
 
 	snprintf (weathermsg,128,"sp:");
 
 	memset(weathertmp,0,sizeof weathertmp);
-	char weathertmp3[16];
+	//char weathertmp3[16];
 	for (int i=0; i<cnt; i++) {
 
-	    snprintf(weathertmp2,16," %s",getwid((wdata+i)->weather_id[c])->symbol);
+	    const struct weather_id* wid = getwid((wdata+i)->weather_id[c]);
+
+	    if (wid->format_on)
+		snprintf(weathertmp2,16," %s%s%s",wid->format_on,wid->symbol,wid->format_off); else
+		    snprintf(weathertmp2,16," %s",wid->symbol);
+
 	    strcat(weathertmp,weathertmp2);
 	}
 	weathermsg = strrecat(weathermsg,weathertmp);
@@ -418,6 +484,71 @@ int set_cmd_cb (irc_session_t* session, const char* restrict nick, const char* r
     return 0;
 }
 
+int cnt_tokens (const char* restrict string, char delim) {
+
+    int tokens = 1;
+
+    bool emptytkn = false;
+
+    for (int i=0; i < strlen(string); i++)
+	if (string[i] == delim) { if (!emptytkn) tokens++; emptytkn = true;} else {emptytkn = false;}
+
+    return tokens;
+}
+
+int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+
+    if (argc == 1) {
+	respond(session,nick,channel,"Usage: .xr [currency list], .xr [number] [src currency] [dest currency]"); return 0;
+    }	
+
+    if (argc == 2) {
+
+	int c = cnt_tokens(argv[1],',');
+
+	struct exchange_rate res[c];
+
+	char* curlist = strdup(argv[1]);
+
+	char* saveptr = NULL;
+
+	int ci=0; char* curtok = strtok_r(curlist,",",&saveptr);
+
+	do {
+
+	    res[ci].rate = 0.0;
+	    strncpy(res[ci].symbol,curtok,4);
+
+	    ci++;
+	    curtok = strtok_r(NULL,",",&saveptr);
+
+	} while (curtok && (ci < c));
+
+	int r = get_exchange_rates(NULL,NULL,ci,res);
+
+	for (int i=0; i < ci; i++)
+	    ircprintf(session,nick,channel,"%s = $%.3f ($1 = %.3f %s)",res[i].symbol,1 / res[i].rate, res[i].rate, res[i].symbol);
+    }
+
+    if (argc == 4) {
+
+	float count = atof(argv[1]);
+	
+	struct exchange_rate res[2];
+
+	strncpy(res[0].symbol,argv[2],4);
+	strncpy(res[1].symbol,argv[3],4);
+
+	int r = get_exchange_rates(NULL,NULL,2,res);
+
+	ircprintf(session,nick,channel,"%.3f %s = %.3f %s",res[0].symbol,count, res[1].symbol, count * res[1].rate / res[0].rate);
+    }
+
+    return 0;
+
+}
+
 int weather_celsius_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
     respond(session,nick,channel,"Weather responses set to Celsius.");
@@ -442,6 +573,7 @@ struct irc_user_commands cmds[] = {
     {".owm", true, weather_current_cb},
     {".owf", true, weather_forecast_cb},
     {".owl", true, weather_longforecast_cb},
+    {".xr", false, xr_cmd_cb},
     {".about", false, NULL},
 };
 
