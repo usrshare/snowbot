@@ -17,6 +17,7 @@ add_executable (snowbot
 		src/irc_commands.c
 		src/irc_common.c
 		src/irc_user.c
+		src/irc_watch.c
 		src/http.c
 		src/activity.c
 		src/hashtable.c

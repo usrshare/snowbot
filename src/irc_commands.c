@@ -229,7 +229,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
 			     memset(weathertmp,0,sizeof weathertmp);
 			     for (int i=0; i<cnt; i++) {
-				 snprintf(weathertmp2,16,"%3d",(int)round((wdata+i)->main_temp /*- 273.15f*/));
+				 snprintf(weathertmp2,16,"%3d",(int)round((wdata+i)->main_temp - 273.15f));
 				 strcat(weathertmp,weathertmp2);
 			     }
 			     weathermsg = strrecat(weathermsg,weathertmp);
@@ -242,7 +242,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
 				memset(weathertmp,0,sizeof weathertmp);
 				for (int i=0; i<cnt; i++) {
-				    snprintf(weathertmp2,16,"%3d",(int)round(( ((wdata+i)->main_temp /*- 273.15f*/)*1.8f)+32.0f));
+				    snprintf(weathertmp2,16,"%3d",(int)round(( ((wdata+i)->main_temp - 273.15f)*1.8f)+32.0f));
 				    strcat(weathertmp,weathertmp2);
 				}
 				weathermsg = strrecat(weathermsg,weathertmp);
