@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <time.h>
 
+#include "irc_watch.h"
 #include "irc_commands.h"
 #include "irc_common.h"
 #include "irc_user.h"
