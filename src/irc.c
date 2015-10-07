@@ -128,6 +128,8 @@ void count_msg(irc_session_t* session, const char* restrict nick, const char* re
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
+    watch_addmsg(nick,msg);
+   
     if (strcmp(nick, ibp->msg_current_nickname) == 0) {
 
 	ibp->cons_count++;
@@ -213,8 +215,17 @@ void connect_cb(irc_session_t* session, const char* event, const char* origin, c
     printf("Successfully connected to the network.\n");
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
-    int r = irc_cmd_join( session, ibp->irc_channel, 0);
-    if (r != 0) printf("Can't join %s: %s\n",ibp->irc_channel,irc_strerror(irc_errno(session)));
+    char* saveptr = NULL;
+    char* chantok = strtok_r(ibp->irc_channel,",",&saveptr);
+
+    int r = 0;
+
+    while (chantok) {
+	r = irc_cmd_join( session, chantok, 0);
+	if (r != 0) printf("Can't join %s: %s\n",chantok,irc_strerror(irc_errno(session)));
+	chantok = strtok_r(NULL,",",&saveptr);
+    }
+
 
     r = hcreate(512);
     if (r == 0) perror("Can't create user hashtable");

@@ -6,6 +6,7 @@
 
 #include "irc_common.h"
 #include "irc_user.h"
+#include "irc_watch.h"
 
 #include "weather.h"
 #include "xrates.h"
@@ -490,7 +491,7 @@ int cnt_tokens (const char* restrict string, char delim) {
 
     bool emptytkn = false;
 
-    for (int i=0; i < strlen(string); i++)
+    for (unsigned int i=0; i < strlen(string); i++)
 	if (string[i] == delim) { if (!emptytkn) tokens++; emptytkn = true;} else {emptytkn = false;}
 
     return tokens;
@@ -562,6 +563,22 @@ int weather_fahrenheit_cb (irc_session_t* session, const char* restrict nick, co
     return 0;
 }
 
+int charcount_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+    
+    if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <nickname> [seconds]",argv[0]); return 0;}
+
+    int seconds = ((argc >= 3) ? atoi(argv[2]) : 0);
+
+    unsigned int r = watch_getlength(argv[1],seconds);
+
+    if (seconds)
+	ircprintf(session,nick,channel,"I've seen %s post %d bytes in the last %d seconds.",argv[1],r,seconds);
+    else
+	ircprintf(session,nick,channel,"I remember %s posting %d bytes in the last %d messages.",argv[1],r,WATCHLEN);
+    
+    return 0;
+}
+
 struct irc_user_commands cmds[] = {
     {".help", false, helpcmd_cb},
     {".load", false, load_cmd_cb},
@@ -573,6 +590,7 @@ struct irc_user_commands cmds[] = {
     {".owm", true, weather_current_cb},
     {".owf", true, weather_forecast_cb},
     {".owl", true, weather_longforecast_cb},
+    {".cc", false, charcount_cb},
     {".xr", false, xr_cmd_cb},
     {".about", false, NULL},
 };

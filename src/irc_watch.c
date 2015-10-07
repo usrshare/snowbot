@@ -9,7 +9,6 @@ struct watch_msgs {
 	time_t time;
 };
 
-#define WATCHLEN 100
 struct watch_msgs watch[WATCHLEN];
 unsigned int newmsg_i = 0;
 
