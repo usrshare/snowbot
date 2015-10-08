@@ -297,7 +297,7 @@ void* create_bot(char* irc_channel) {
     return session;
 }
 
-int connect_bot(void* session, char* address, int port, bool use_ssl, char* nickname) {
+int connect_bot(void* session, char* address, int port, bool use_ssl, char* nickname, char* password) {
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
     ibp->irc_nickname = nickname;
@@ -309,7 +309,7 @@ int connect_bot(void* session, char* address, int port, bool use_ssl, char* nick
 	strncat(address_copy,address,126);
     } else strncpy(address_copy,address,127);
 
-    int r = irc_connect(session,address_copy,port,NULL,nickname,NULL,"snowbot");
+    int r = irc_connect(session,address_copy,port,password,nickname,NULL,"snowbot");
     if (r != 0) fprintf(stderr,"IRC connection error: %s.\n",irc_strerror(irc_errno(session)));
     return r;
 }

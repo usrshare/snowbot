@@ -18,11 +18,15 @@ int main(int argc, char** argv) {
 	bool use_ssl = 0;
 	char* bot_nickname = "snowbot";
 	char* bot_channel = NULL;
+	char* srv_password = NULL;
 
 	int opt;
 
-	while ((opt = getopt(argc,argv,"p:sn:c:")) != -1) {
+	while ((opt = getopt(argc,argv,"P:p:sn:c:")) != -1) {
 		switch(opt) {
+			case 'P':
+				srv_password = optarg;
+				break;
 			case 'p':
 				server_port = atoi(optarg);
 				break;
@@ -55,7 +59,7 @@ int main(int argc, char** argv) {
 	void* bothnd = create_bot(bot_channel);
 	if (!bothnd) { fprintf(stderr,"Unable to create a bot.\n"); return 1;}
 
-	connect_bot(bothnd,server_addr,server_port,use_ssl,bot_nickname);
+	connect_bot(bothnd,server_addr,server_port,use_ssl,bot_nickname,srv_password);
 
 	loop_bot(bothnd);
 
