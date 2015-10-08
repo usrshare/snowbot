@@ -6,5 +6,6 @@
 
 int watch_addmsg(const char* restrict nickname, const char* restrict msg);
 unsigned int watch_getlength(const char* restrict nickname, unsigned int seconds);
+unsigned int watch_countmsg();
 
 #endif

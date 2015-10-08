@@ -574,7 +574,7 @@ int charcount_cb (irc_session_t* session, const char* restrict nick, const char*
     if (seconds)
 	ircprintf(session,nick,channel,"I've seen %s post %d bytes in the last %d seconds.",argv[1],r,seconds);
     else
-	ircprintf(session,nick,channel,"I remember %s posting %d bytes in the last %d messages.",argv[1],r,WATCHLEN);
+	ircprintf(session,nick,channel,"I remember %s posting %d bytes in the last %d messages.",argv[1],r,watch_countmsg());
     
     return 0;
 }

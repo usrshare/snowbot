@@ -316,7 +316,8 @@ int connect_bot(void* session, char* address, int port, bool use_ssl, char* nick
 
 int loop_bot(void* session) {
 
-    irc_run(session);
+    int r = irc_run(session);
+    if (r != 0) fprintf(stderr,"irc_run error: %s.\n",irc_strerror(irc_errno(session)));
     return 0;
 }
 

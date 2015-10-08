@@ -72,6 +72,22 @@ void* ht_search_ind(struct hashtable* ht, const char* restrict key, int index) {
     return NULL;
 }
 
+int ht_all(struct hashtable* ht, ht_all_cb cb, void* ctx) {
+
+    int c = 0;
+    for (unsigned int i=0; i < ht->n; i++) {
+
+	    struct ht_item* hti = ht->items[i];
+
+	    while (hti) {
+	    if (cb) cb(hti->key,hti->value,ctx);
+	    c++;
+	    hti = hti->next;
+	    }
+    }
+    return c;
+}
+
 void* ht_search(struct hashtable* ht, const char* restrict key) {
     return ht_search_ind(ht,key,0);
 }

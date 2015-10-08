@@ -9,6 +9,7 @@ struct watch_msgs {
 	time_t time;
 };
 
+#define WATCHLEN 100
 struct watch_msgs watch[WATCHLEN];
 unsigned int newmsg_i = 0;
 
@@ -20,6 +21,15 @@ int watch_addmsg(const char* restrict nickname, const char* restrict msg) {
 	newmsg_i = ((newmsg_i+1) % WATCHLEN);
 	watch[newmsg_i].time = time(NULL);
 	return 0;
+}
+
+unsigned int watch_countmsg() {
+
+    unsigned int res = 0;
+    for (int i=0; i < WATCHLEN; i++)
+	if (watch[i].time != 0) res++;
+
+    return res;
 }
 
 unsigned int watch_getlength(const char* restrict nickname, unsigned int seconds) {
