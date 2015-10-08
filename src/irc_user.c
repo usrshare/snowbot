@@ -32,7 +32,9 @@ int load_user_params(const char* restrict nick, struct irc_user_params* up) {
 
 struct irc_user_params* get_user_params(const char* restrict nick, enum empty_beh add_if_empty) {
 
-    if (!userht) userht = ht_create(128);
+    if (!userht) { userht = ht_create(128);
+	atexit(saveall);
+    }
 
     void* p = ht_search(userht,nick);
     if (p) return p;
@@ -60,4 +62,15 @@ int del_user_params(const char* restrict nick, struct irc_user_params* value) {
     ht_delete(userht,nick);
 
     return 0;
+}
+
+int saveall_htcb(const char* restrict key, void* value, void* ctx) {
+	save_user_params(key,(struct irc_user_params*) value);
+	return NULL;
+}
+
+int saveall() {
+
+	ht_all(userht,saveall_htcb,NULL);
+	return 0;
 }

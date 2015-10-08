@@ -43,7 +43,7 @@ struct irc_bot_params{
 
 };
 
-int add_paste_line(irc_session_t* session, struct irc_user_params* up, const char* restrict string) {
+int add_paste_line(irc_session_t* ession, struct irc_user_params* up, const char* restrict string) {
 
     size_t cursize = (up->paste_text) ? strlen(up->paste_text) : 0;
     up->paste_size = cursize + 2 + strlen(string);

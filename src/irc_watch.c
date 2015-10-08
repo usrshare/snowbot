@@ -9,7 +9,6 @@ struct watch_msgs {
 	time_t time;
 };
 
-#define WATCHLEN 100
 struct watch_msgs watch[WATCHLEN];
 unsigned int newmsg_i = 0;
 
@@ -39,7 +38,7 @@ unsigned int watch_getlength(const char* restrict nickname, unsigned int seconds
 
 	for (int i=0; i < WATCHLEN; i++) {
 		if ((seconds) && ( (curtime - watch[i].time) > seconds) ) continue;
-		if (strncmp(nickname,watch[i].nickname,9) == 0) res += watch[i].length;
+		if (ircstrncmp(nickname,watch[i].nickname,9) == 0) res += watch[i].length;
 	}
 
 	return res;

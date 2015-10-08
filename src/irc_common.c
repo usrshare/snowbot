@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "irc_common.h"
 #include <stdarg.h>
 #include <string.h>
@@ -7,6 +8,47 @@ char* strrecat(char* orig, const char* append) {
     char* new = realloc(orig,strlen(orig) + strlen(append) + 1);
     new = strcat(new,append);
     return new;
+}
+
+int irccharcasecmp(const char c1, const char c2) {
+
+    //as defined by RFC 1459, the characters {}| (91~93)and []\(123~125)
+    //are case-equivalent.
+
+    if ((c1 < 'A') || (c1 > '}')) return c1-c2;
+    if ((c2 < 'A') || (c2 > '}')) return c1-c2;
+    if ((c1 == '^') || (c1 == '_')) return c1-c2;
+    if ((c2 == '^') || (c2 == '_')) return c1-c2;
+
+    return (c1 & 0x5F) - (c2 & 0x5F);
+
+}
+
+int ircstrcmp(const char* s1, const char* s2) {
+
+    size_t n=0;
+
+    if (s1 == s2) return 0;
+    do {
+	int r = irccharcasecmp(s1[n],s2[n]);
+	if (r) return r;
+	n++;
+    } while ((s1[n]) && (s2[n]));
+    return 0;
+}
+
+int ircstrncmp(const char* s1, const char* s2, size_t N) {
+    
+    size_t n=0;
+
+    if (s1 == s2) return 0;
+    do {
+	int r = irccharcasecmp(s1[n],s2[n]);
+	if (r) return r;
+	n++;
+    } while ((s1[n]) && (s2[n]) && (n < N));
+    return 0;
+
 }
 
 int respond(irc_session_t* session, const char* restrict target, const char* restrict channel, const char* restrict msg) {

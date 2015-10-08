@@ -1,5 +1,6 @@
 #include "savefile.h"
 
+#include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
@@ -106,7 +107,7 @@ int getparam(void* data, struct saveparam* params, size_t paramcnt, const char* 
 int savedata(char* filename, void* data, struct saveparam* params, size_t paramcnt) {
 
 	FILE* sf = fopen(filename,"w");
-	if (!sf) { perror("Opening save file"); return 1; }
+	if (!sf) { fprintf(stderr,"Opening save %s: %s",filename,strerror(errno)); return 1; }
 
 	for (size_t i=0; i < paramcnt; i++) {
 		struct saveparam* curpar = params+i;
@@ -149,7 +150,7 @@ int savedata(char* filename, void* data, struct saveparam* params, size_t paramc
 int loaddata(char* filename, void* data, struct saveparam* params, size_t paramcnt) {
 
 	FILE* sf = fopen(filename,"r");
-	if (!sf) { perror("Opening load file"); return 1; }
+	if (!sf) { fprintf(stderr,"Opening load %s: %s\n",filename,strerror(errno)); return 1; }
 
 	char* gline = NULL;
 	size_t gsize = 0;
