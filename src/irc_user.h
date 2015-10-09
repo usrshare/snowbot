@@ -23,6 +23,7 @@ struct irc_user_params{
 
     enum weather_modes wmode;
     unsigned int cityid;
+    uint8_t usegraphics;
 
     char* paste_text;
     size_t paste_size;

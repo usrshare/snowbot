@@ -569,7 +569,9 @@ int charcount_cb (irc_session_t* session, const char* restrict nick, const char*
 
     int seconds = ((argc >= 3) ? atoi(argv[2]) : 0);
 
-    unsigned int r = watch_getlength(argv[1],seconds);
+    time_t tmin = time(NULL) - seconds;
+
+    unsigned int r = watch_getlength(argv[1],tmin,0);
 
     if (seconds)
 	ircprintf(session,nick,channel,"I've seen %s post %d bytes in the last %d seconds.",argv[1],r,seconds);

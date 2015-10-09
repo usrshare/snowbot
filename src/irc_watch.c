@@ -1,5 +1,7 @@
-#include "irc_watch.h"
 // vim: cin:sts=4:sw=4 
+#include "irc_watch.h"
+#include "irc_common.h"
+
 #include <time.h>
 #include <string.h>
 
@@ -31,13 +33,13 @@ unsigned int watch_countmsg() {
     return res;
 }
 
-unsigned int watch_getlength(const char* restrict nickname, unsigned int seconds) {
+unsigned int watch_getlength(const char* restrict nickname, time_t time_min, time_t time_max) {
 	
 	unsigned int res = 0;
-	time_t curtime = time(NULL);
 
 	for (int i=0; i < WATCHLEN; i++) {
-		if ((seconds) && ( (curtime - watch[i].time) > seconds) ) continue;
+		if ((time_min) && (watch[i].time < time_min)) continue;
+		if ((time_max) && (watch[i].time > time_max)) continue;
 		if (ircstrncmp(nickname,watch[i].nickname,9) == 0) res += watch[i].length;
 	}
 

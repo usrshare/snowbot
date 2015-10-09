@@ -130,7 +130,7 @@ void count_msg(irc_session_t* session, const char* restrict nick, const char* re
 
     watch_addmsg(nick,msg);
    
-    if (strcmp(nick, ibp->msg_current_nickname) == 0) {
+    if (ircstrcmp(nick, ibp->msg_current_nickname) == 0) {
 
 	ibp->cons_count++;
 	ibp->cons_length += strlen(msg); 
@@ -202,7 +202,7 @@ void join_cb(irc_session_t* session, const char* event, const char* origin, cons
     char nick[10];
     irc_target_get_nick(origin,nick,10);
 
-    if (strcmp(nick,ibp->irc_nickname) == 0) {
+    if (ircstrcmp(nick,ibp->irc_nickname) == 0) {
 	printf("Joined channel %s.\n",params[0]);
 	ibp->channel_joined = 1;
     }

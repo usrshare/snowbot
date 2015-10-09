@@ -8,6 +8,7 @@ struct weather_id {
 	int id;
 	const char* description;
 	const char* symbol;
+	const char* symbol_u;
 	const char* format_on;
 	const char* format_off;
 };

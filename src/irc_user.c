@@ -8,7 +8,8 @@ struct hashtable* userht = NULL;
 
 struct saveparam irc_save_params[] = {
     {"wmode",ST_UINT32,0,offsetof(struct irc_user_params,wmode)},
-    {"cityid",ST_UINT32,0,offsetof(struct irc_user_params,cityid)}
+    {"cityid",ST_UINT32,0,offsetof(struct irc_user_params,cityid)},
+    {"usegraphics",ST_UINT8,0,offsetof(struct irc_user_params,usegraphics)}
 };
 
 const size_t paramcnt = sizeof(irc_save_params) / sizeof(*irc_save_params);
