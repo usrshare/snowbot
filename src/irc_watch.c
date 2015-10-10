@@ -2,6 +2,7 @@
 #include "irc_watch.h"
 #include "irc_common.h"
 
+#include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include <strings.h>
@@ -29,6 +30,47 @@ struct watch_msgs watch[WATCHLEN];
 unsigned int newmsg_i = 0;
 
 #define WORDDELIM " ,.:;/\\?!\"[]{}()_-+=@#$%^&*~`|<>" // single apostrophe not included, because of contractions.
+
+void watch_save(void) {
+
+    FILE* ws = fopen("irc.watch","wb");
+    if (!ws) return;
+
+    fwrite(&newmsg_i,sizeof(int),1,ws);
+
+    for(int i=0; i < WATCHLEN; i++) {
+
+	fwrite(watch[i].nickname,10,1,ws);
+	fwrite(watch[i].channel,10,1,ws);
+	fwrite(&watch[i].length,sizeof(int),1,ws);
+	fwrite(&watch[i].wordcount,sizeof(int),1,ws);
+	fwrite(&watch[i].bscount,sizeof(int),1,ws);
+	fwrite(&watch[i].time,sizeof(time_t),1,ws);
+    }
+    fclose(ws);
+    return;
+}
+
+void watch_load(void) {
+
+    FILE* ws = fopen("irc.watch","wb");
+    if (!ws) return;
+    
+    fread(&newmsg_i,sizeof(int),1,ws);
+
+    for(int i=0; i < WATCHLEN; i++) {
+
+	fread(watch[i].nickname,10,1,ws);
+	fread(watch[i].channel,10,1,ws);
+	fread(&watch[i].length,sizeof(int),1,ws);
+	fread(&watch[i].wordcount,sizeof(int),1,ws);
+	fread(&watch[i].bscount,sizeof(int),1,ws);
+	fread(&watch[i].time,sizeof(time_t),1,ws);
+    }
+    fclose(ws);
+    return;
+}
+
 
 int watch_addmsg(const char* restrict nickname, const char* restrict channel, const char* restrict msg) {
 

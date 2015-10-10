@@ -213,6 +213,10 @@ void join_cb(irc_session_t* session, const char* event, const char* origin, cons
 void connect_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
     printf("Successfully connected to the network.\n");
+	
+    watch_load();
+    atexit(watch_save);
+
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
     char* saveptr = NULL;

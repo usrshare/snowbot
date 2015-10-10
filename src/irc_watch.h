@@ -9,4 +9,6 @@ int watch_addmsg(const char* restrict nickname, const char* restrict channel, co
 unsigned int watch_getlength(const char* restrict nickname, const char* restrict channel, time_t time_min, time_t time_max);
 unsigned int watch_countmsg();
 
+void watch_save(void);
+void watch_load(void);
 #endif
