@@ -53,7 +53,7 @@ void watch_save(void) {
 
 void watch_load(void) {
 
-    FILE* ws = fopen("irc.watch","wb");
+    FILE* ws = fopen("irc.watch","rb");
     if (!ws) return;
     
     fread(&newmsg_i,sizeof(int),1,ws);
