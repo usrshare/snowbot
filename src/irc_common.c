@@ -1,12 +1,21 @@
 // vim: cin:sts=4:sw=4 
 #include "irc_common.h"
+
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
 
 char* strrecat(char* orig, const char* append) {
-    char* new = realloc(orig,strlen(orig) + strlen(append) + 1);
+    
+    char* new = NULL;
+    if (orig) {
+    new = realloc(orig,strlen(orig) + strlen(append) + 1);
     new = strcat(new,append);
+    } else {
+    new = strdup(append);
+    }
+    
     return new;
 }
 
@@ -22,6 +31,19 @@ int irccharcasecmp(const char c1, const char c2) {
 
     return (c1 & 0x5F) - (c2 & 0x5F);
 
+}
+
+int cnt_tokens (const char* restrict string, const char* delim) {
+
+    int tokens = 1;
+
+    bool emptytkn = false;
+
+    for (unsigned int i=0; i < strlen(string); i++)
+	for (unsigned int j=0; j < strlen(delim); j++)
+	    if (string[i] == delim[j]) { if (!emptytkn) tokens++; emptytkn = true;} else {emptytkn = false;}
+
+    return tokens;
 }
 
 int ircstrcmp(const char* s1, const char* s2) {

@@ -318,9 +318,8 @@ int load_location (const char* restrict params, struct irc_user_params* up, stru
 
     if (!parse_ok) { r = sscanf(params," %f, %f", &wloc->coord_lon, &wloc->coord_lat); parse_ok = (r == 2); }
     if (!parse_ok) { r = sscanf(params," %d, %2[A-Za-z]", &wloc->zipcode, wloc->sys_country); parse_ok = (r >= 1); }
-    if (!parse_ok) { r = sscanf(params," %64[^,\n\r], %2[A-Za-z]", wloc->city_name, wloc->sys_country); escape_location(wloc->city_name); parse_ok = (r >= 1); }
+    if (!parse_ok) { r = sscanf(params," %64[^#,\n\r], %2[A-Za-z]", wloc->city_name, wloc->sys_country); escape_location(wloc->city_name); parse_ok = (r >= 1); }
 
-    if (!parse_ok) { wloc->city_id = up->cityid; parse_ok = (up->cityid); }
     if (parse_ok) return 0; else return 1;
 
 }
@@ -330,6 +329,51 @@ int helpcmd_cb(irc_session_t* session, const char* restrict nick, const char* re
     return 0;
 }
 
+int weather_channel(irc_session_t* session, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
+
+    strcpy(wloc->sys_country,"EF");
+    strcpy(wloc->city_name,channel);
+    wloc->city_id = -1;
+    wloc->zipcode = 99999;
+
+    time_t hour_ago = time(NULL)-3600;
+
+    unsigned int lasthour = watch_getlength(NULL,channel,hour_ago,0);
+
+    unsigned int snowmsgs = watch_getlength("snow_",channel,hour_ago,0) + watch_getlength("snow^",channel,hour_ago,0);
+
+    float chantemp = 273.15f - 10.0f + ((float)lasthour / 2.0f);
+    //assume 30 messages on average. temperatures will range from -5C to whatever.
+
+    wdata->main_temp = chantemp;
+    wdata->main_temp_min = wdata->main_temp_max = chantemp;
+
+    float snowpct = lasthour ? (snowmsgs / lasthour): 0.0f;
+
+    wdata->main_pressure = -1.0f;
+    wdata->main_humidity = -1.0f;
+
+    wdata->weather_c = 1;
+
+    if (snowpct >= .40f) wdata->weather_id[0] = 602; else
+	if (snowpct >= .20f) wdata->weather_id[0] = 601; else
+	    if (snowpct >= .10f) wdata->weather_id[0] = 600; else
+		wdata->weather_id[0] = 800;
+
+    unsigned int windmsgs = watch_getlength("wind",channel,hour_ago,0);
+
+    float windspd = (float)windmsgs / 50.0f;
+    wdata->wind_speed = windspd;
+
+    return 0;
+}	
+
+int weather_is_channel(const char* restrict arg) {
+
+    if ((arg[0] == '#') && (strtol(arg+1,NULL,10) == 0)) return 1; 
+
+    return 0;
+}
 
 int weather_current_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
@@ -345,10 +389,16 @@ int weather_current_cb(irc_session_t* session, const char* restrict nick, const 
 
     else {
 	int r = load_location(argv[0]+4,up,&wloc);
+
+	if (r) r = !weather_is_channel(argv[0]+5);
+	if (r) r = wloc.city_id = up->cityid;
 	if (r) {respond(session,nick,channel,"Can't understand the parameters. Sorry."); return 0;}
     }
 
-    get_current_weather( &wloc, &wdata);
+    if (!weather_is_channel(argv[0]+5)) 
+	get_current_weather( &wloc, &wdata); else
+	    weather_channel(session, argv[0]+5,&wloc,&wdata);
+
     handle_weather_current(session, nick, channel, &wloc, &wdata);
     return 0;
 }	
@@ -485,17 +535,6 @@ int set_cmd_cb (irc_session_t* session, const char* restrict nick, const char* r
     return 0;
 }
 
-int cnt_tokens (const char* restrict string, char delim) {
-
-    int tokens = 1;
-
-    bool emptytkn = false;
-
-    for (unsigned int i=0; i < strlen(string); i++)
-	if (string[i] == delim) { if (!emptytkn) tokens++; emptytkn = true;} else {emptytkn = false;}
-
-    return tokens;
-}
 
 int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
@@ -506,7 +545,7 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 
     if (argc == 2) {
 
-	int c = cnt_tokens(argv[1],',');
+	int c = cnt_tokens(argv[1],",");
 
 	struct exchange_rate res[c];
 
@@ -535,7 +574,7 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
     if (argc == 4) {
 
 	float count = atof(argv[1]);
-	
+
 	struct exchange_rate res[2];
 
 	strncpy(res[0].symbol,argv[2],4);
@@ -563,21 +602,58 @@ int weather_fahrenheit_cb (irc_session_t* session, const char* restrict nick, co
     return 0;
 }
 
+char* risingblocks[] = {" ","▁","▂","▃","▄","▅","▆","▇","█","▒"};
+
+int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    if (argc != 4) { ircprintf(session,nick,channel,"Usage: %s <nickname> <seconds> <intervals>",argv[0]); return 0;}
+
+    int seconds = atoi(argv[2]);
+    int intervals = atoi(argv[3]);
+
+    int bytes[intervals];
+    memset(bytes,0,sizeof(int) * intervals);
+
+    count_by_period(argv[1],time(NULL) - (seconds * intervals),seconds,intervals,bytes);
+
+    char* output = strdup("|");
+
+    int maxbytes = 1;
+
+    for (int i=0; i < intervals; i++)
+	if (bytes[i] > maxbytes) maxbytes = bytes[i];
+
+    for (int i=0; i < intervals; i++)
+	if (bytes[i] == 0) output = strrecat(output," "); else
+	{
+	    int fill = (bytes[i] * 8 / maxbytes) + 1;
+	    output = strrecat(output,risingblocks[fill]);
+	}
+
+    output = strrecat(output,"|");
+
+    respond(session,nick,channel,output);
+
+    free(output);
+
+    return 0;
+}
+
 int charcount_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
-    
+
     if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <nickname> [seconds]",argv[0]); return 0;}
 
     int seconds = ((argc >= 3) ? atoi(argv[2]) : 0);
 
     time_t tmin = time(NULL) - seconds;
 
-    unsigned int r = watch_getlength(argv[1],tmin,0);
+    unsigned int r = watch_getlength(argv[1],NULL,tmin,0);
 
     if (seconds)
 	ircprintf(session,nick,channel,"I've seen %s post %d bytes in the last %d seconds.",argv[1],r,seconds);
     else
 	ircprintf(session,nick,channel,"I remember %s posting %d bytes in the last %d messages.",argv[1],r,watch_countmsg());
-    
+
     return 0;
 }
 
@@ -593,6 +669,7 @@ struct irc_user_commands cmds[] = {
     {".owf", true, weather_forecast_cb},
     {".owl", true, weather_longforecast_cb},
     {".cc", false, charcount_cb},
+    {".ccg", false, charcountgraph_cb},
     {".xr", false, xr_cmd_cb},
     {".about", false, NULL},
 };

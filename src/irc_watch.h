@@ -5,8 +5,8 @@
 #define WATCHLEN 1024
 #include <time.h>
 
-int watch_addmsg(const char* restrict nickname, const char* restrict msg);
-unsigned int watch_getlength(const char* restrict nickname, time_t time_min, time_t time_max);
+int watch_addmsg(const char* restrict nickname, const char* restrict channel, const char* restrict msg);
+unsigned int watch_getlength(const char* restrict nickname, const char* restrict channel, time_t time_min, time_t time_max);
 unsigned int watch_countmsg();
 
 #endif

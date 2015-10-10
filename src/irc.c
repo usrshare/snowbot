@@ -124,11 +124,11 @@ int handle_msg(irc_session_t* session, const char* restrict nick, const char* re
     return 0;
 }
 
-void count_msg(irc_session_t* session, const char* restrict nick, const char* restrict msg) {
+void count_msg(irc_session_t* session, const char* restrict nick, const char* restrict channel, const char* restrict msg) {
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
-    watch_addmsg(nick,msg);
+    watch_addmsg(nick,channel,msg);
    
     if (ircstrcmp(nick, ibp->msg_current_nickname) == 0) {
 
@@ -179,7 +179,7 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
 	handle_msg(session, nick, params[0], handle_ptr);
     } else {
 
-	count_msg(session,nick,params[1]);
+	if (params[0] != NULL) count_msg(session,nick,params[0],params[1]);
     }
 }
 

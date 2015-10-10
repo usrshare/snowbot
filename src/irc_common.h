@@ -5,6 +5,7 @@
 
 char* strrecat(char* orig, const char* append);
 
+int cnt_tokens (const char* restrict string, const char* delim);
 // RFC-accurate string comparison functions.
 int ircstrcmp(const char* s1, const char* s2);
 int ircstrncmp(const char* s1, const char* s2, size_t N);
