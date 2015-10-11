@@ -48,6 +48,7 @@ void watch_save(void) {
 	fwrite(&watch[i].time,sizeof(time_t),1,ws);
     }
     fclose(ws);
+    printf("Saved watch data.\n");
     return;
 }
 
@@ -68,6 +69,7 @@ void watch_load(void) {
 	fread(&watch[i].time,sizeof(time_t),1,ws);
     }
     fclose(ws);
+    printf("Loaded watch data.\n");
     return;
 }
 
@@ -132,8 +134,8 @@ unsigned int watch_getlength(const char* restrict nickname, const char* restrict
 	for (int i=0; i < WATCHLEN; i++) {
 		if ((time_min) && (watch[i].time < time_min)) continue;
 		if ((time_max) && (watch[i].time > time_max)) continue;
-		if ((channel) && (strncmp(watch[i].channel,channel,10) != 0)) continue;
-		if ((!nickname) || (ircstrncmp(nickname,watch[i].nickname,9) == 0)) res += watch[i].length;
+		if ((channel) && (ircstrncmp(watch[i].channel,channel,10) != 0)) continue;
+		if ((!nickname) || (ircstrncmp(nickname,watch[i].nickname,9) == 0) ) res += watch[i].length;
 	}
 
 	return res;
