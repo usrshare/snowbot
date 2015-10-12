@@ -68,7 +68,7 @@ int ircstrncmp(const char* s1, const char* s2, size_t N) {
 	int r = irccharcasecmp(s1[n],s2[n]);
 	if (r) return r;
 	n++;
-    } while ((s1[n]) && (s2[n]) && (n < N));
+    } while ( ((s1[n]) || (s2[n])) && (n < N) );
     return 0;
 
 }
