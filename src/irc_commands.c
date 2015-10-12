@@ -338,9 +338,13 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
 
     time_t hour_ago = time(NULL)-3600;
 
-    unsigned int lasthour = watch_getlength(NULL,channel,hour_ago,0);
+    unsigned int lasthour = watch_getlength(NULL,channel,hour_ago,0,NULL,NULL);
 
-    unsigned int snowmsgs = watch_getlength("snow_",channel,hour_ago,0) + watch_getlength("snow^",channel,hour_ago,0);
+    unsigned int bs1,bs2;
+
+    unsigned int snowmsgs = watch_getlength("snow_",channel,hour_ago,0,NULL,&bs1) + watch_getlength("snow^",channel,hour_ago,0,NULL,&bs2);
+
+    bs1 += bs2;
 
     float chantemp = 273.15f - 10.0f + ((float)lasthour / 16.0f);
     //assume 30 messages on average. temperatures will range from -5C to whatever.
@@ -348,7 +352,7 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
     wdata->main_temp = chantemp;
     wdata->main_temp_min = wdata->main_temp_max = chantemp;
 
-    float snowpct = lasthour ? (snowmsgs / lasthour): 0.0f;
+    float snowpct = lasthour ? ((float)snowmsgs / lasthour): 0.0f;
 
     wdata->main_pressure = -1.0f;
     wdata->main_humidity = -1.0f;
@@ -360,7 +364,14 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
 	    if (snowpct >= .10f) wdata->weather_id[0] = 600; else
 		wdata->weather_id[0] = 800;
 
-    unsigned int windmsgs = watch_getlength("wind",channel,hour_ago,0);
+    if (bs1) {
+	wdata->weather_c = 2;
+	if (bs1 >= 4) wdata->weather_id[1] = 212; else
+	    if (bs1 >= 2) wdata->weather_id[1] = 211; else
+		wdata->weather_id[1] = 210;
+    }
+
+    unsigned int windmsgs = watch_getlength("wind",channel,hour_ago,0,NULL,NULL);
 
     float windspd = (float)windmsgs / 50.0f;
     wdata->wind_speed = windspd;
@@ -647,12 +658,14 @@ int charcount_cb (irc_session_t* session, const char* restrict nick, const char*
 
     time_t tmin = time(NULL) - seconds;
 
-    unsigned int r = watch_getlength(argv[1],NULL,seconds ? tmin : 0,0);
+    int wc = 0;
+
+    unsigned int r = watch_getlength(argv[1],NULL,seconds ? tmin : 0,0,&wc,NULL);
 
     if (seconds)
-	ircprintf(session,nick,channel,"I've seen %s post %d bytes in the last %d seconds.",argv[1],r,seconds);
+	ircprintf(session,nick,channel,"I've seen %s post %d words (%d bytes) in the last %d seconds.",argv[1],wc,r,seconds);
     else
-	ircprintf(session,nick,channel,"I remember %s posting %d bytes in the last %d messages.",argv[1],r,watch_countmsg());
+	ircprintf(session,nick,channel,"I remember %s posting %d words (%d bytes) in the last %d messages.",argv[1],wc,r,watch_countmsg());
 
     return 0;
 }
