@@ -336,15 +336,15 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
     wloc->city_id = -1;
     wloc->zipcode = 99999;
 
-    time_t hour_ago = time(NULL)-3600;
+    time_t t1h = time(NULL)-3600;
+    time_t t10m = time(NULL)-600;
 
-    unsigned int lasthour = watch_getlength(NULL,channel,hour_ago,0,NULL,NULL);
+    unsigned int lasthour = watch_getlength(NULL,channel,t1h,0,NULL,NULL);
 
-    unsigned int bs1,bs2;
+    unsigned int bs1;
 
-    unsigned int snowmsgs = watch_getlength("snow_",channel,hour_ago,0,NULL,&bs1) + watch_getlength("snow^",channel,hour_ago,0,NULL,&bs2);
-
-    bs1 += bs2;
+    unsigned int snowmsgs = watch_getlength("snow",channel,t1h,0,NULL,&bs1);
+    unsigned int snowmsg2 = watch_getlength("snow",channel,t10m,0,NULL,NULL);
 
     float chantemp = 273.15f - 10.0f + ((float)lasthour / 16.0f);
     //assume 30 messages on average. temperatures will range from -5C to whatever.
@@ -353,6 +353,8 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
     wdata->main_temp_min = wdata->main_temp_max = chantemp;
 
     float snowpct = lasthour ? ((float)snowmsgs / lasthour): 0.0f;
+
+    if (!snowmsg2) snowpct /= 2.0f;
 
     wdata->main_pressure = -1.0f;
     wdata->main_humidity = -1.0f;
@@ -371,7 +373,7 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
 		wdata->weather_id[1] = 210;
     }
 
-    unsigned int windmsgs = watch_getlength("wind",channel,hour_ago,0,NULL,NULL);
+    unsigned int windmsgs = watch_getlength("wind",channel,t1h,0,NULL,NULL);
 
     float windspd = (float)windmsgs / 50.0f;
     wdata->wind_speed = windspd;
@@ -658,7 +660,7 @@ int charcount_cb (irc_session_t* session, const char* restrict nick, const char*
 
     time_t tmin = time(NULL) - seconds;
 
-    int wc = 0;
+    unsigned int wc = 0;
 
     unsigned int r = watch_getlength(argv[1],NULL,seconds ? tmin : 0,0,&wc,NULL);
 

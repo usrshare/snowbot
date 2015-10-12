@@ -14,6 +14,7 @@ include_directories (${CMAKE_SOURCE_DIR}/inc)
 add_executable (snowbot
 		src/main.c
 		src/irc.c
+		src/irc_bookmarks.c
 		src/irc_commands.c
 		src/irc_common.c
 		src/irc_user.c
