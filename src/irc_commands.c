@@ -341,12 +341,13 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
 
     unsigned int lasthour = watch_getlength(NULL,channel,t1h,0,NULL,NULL);
 
-    unsigned int bs1;
+    unsigned int bs1,bs2;
 
-    unsigned int snowmsgs = watch_getlength("snow",channel,t1h,0,NULL,&bs1);
-    unsigned int snowmsg2 = watch_getlength("snow",channel,t10m,0,NULL,NULL);
+    unsigned int snowmsgs = watch_getlength("snow_",channel,t1h,0,NULL,&bs1) + watch_getlength("snow^",channel,t1h,0,NULL,&bs2);
+    bs1 += bs2;
+    unsigned int snowmsg2 = watch_getlength("snow_",channel,t10m,0,NULL,NULL) + watch_getlength("snow^",channel,t10m,0,NULL,NULL);
 
-    float chantemp = 273.15f - 10.0f + ((float)lasthour / 16.0f);
+    float chantemp = 273.15f - 10.0f + sqrtf((float)lasthour);
     //assume 30 messages on average. temperatures will range from -5C to whatever.
 
     wdata->main_temp = chantemp;
