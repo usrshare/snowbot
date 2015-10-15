@@ -120,7 +120,7 @@ unsigned int count_by_period(const char* restrict nickname, time_t start, time_t
     for (int i=0; i < WATCHLEN; i++) {
 	if (watch[i].time < start) continue;
 	if (watch[i].time > (start + (time_t)(interval_s*bcount_c)) ) continue;
-	if (ircstrncmp(nickname,watch[i].nickname,9) == 0) {
+	if ((!nickname) || (ircstrncmp(nickname,watch[i].nickname,9) == 0)) {
 
 	    int x = (watch[i].time - start) / interval_s;
 	    if ((unsigned int)x < bcount_c) bcount_v[x] += watch[i].length; //if it's <0, it'll be too large.

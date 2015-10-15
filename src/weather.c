@@ -117,7 +117,7 @@ int parse_json_object(json_object* obj, void* out, json_parse_cb callback) {
 		ft = json_object_get_type(fv);
 
 		if (callback(out,ft,fn,fv)) 
-			printf("unparsed object field %s\n", fn);
+		{ /* printf("unparsed object field %s\n", fn); */ }
 
 		json_object_iter_next(&it_c);
 
@@ -420,7 +420,7 @@ int parse_json_weather(json_object* weather, struct weather_data* o_wd, struct w
 		ft = json_object_get_type(fv);
 
 		if (fill_json_weather_fields(o_wd,o_loc,ft,fn,fv))
-			printf("unparsed weather field %s\n", fn);
+		{ /* printf("unparsed weather field %s\n", fn); */ }
 
 		json_object_iter_next(&it_c);
 
@@ -443,7 +443,7 @@ int parse_json_forecast(json_object* weather, struct weather_data* o_wd, struct 
 		ft = json_object_get_type(fv);
 
 		if (fill_json_forecast_fields(o_wd,o_loc,ft,fn,fv,&cnt))
-			printf("unparsed forecast field %s\n", fn);
+		{ /* printf("unparsed forecast field %s\n", fn); */ }
 
 		json_object_iter_next(&it_c);
 
@@ -466,7 +466,7 @@ int parse_json_longforecast(json_object* weather, struct forecast_data* o_fd, st
 		ft = json_object_get_type(fv);
 
 		if (fill_json_longforecast_fields(o_fd,o_loc,ft,fn,fv,&cnt))
-			printf("unparsed longforecast field %s\n", fn);
+		{ /* printf("unparsed longforecast field %s\n", fn); */ }
 
 		json_object_iter_next(&it_c);
 

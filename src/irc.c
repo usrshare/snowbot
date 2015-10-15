@@ -69,18 +69,6 @@ int handle_msg(irc_session_t* session, const char* restrict nick, const char* re
     int r = handle_commands(session,nick,channel,msg); 
     if (r == 0) return 0;
 
-    if (msg[0] == '.') {
-	if (strcmp(msg, ".startp") == 0) {
-
-	    respond(session,nick,channel,"Paste mode enabled. All input not starting with a dot will be interpreted as strings to paste. End your document by sending a single dot. To insert a string starting with a dot, prepend another dot.");
-
-	    up->mode = BM_PASTE;
-	    up->paste_text = NULL;
-	    up->paste_size = 0;
-
-	}
-    }
-
     switch(up->mode) {
 	case BM_NONE:
 
@@ -102,7 +90,7 @@ int handle_msg(irc_session_t* session, const char* restrict nick, const char* re
 	    switch(msg[0]) {
 		case '.': {
 			      if (strlen(msg) == 1) {
-				  char* resurl = upload_to_pastebin(nick,"test upload",up->paste_text);	
+				  char* resurl = upload_to_pastebin(nick,up->paste_title ? up->paste_title : "snowbot paste",up->paste_text);	
 				  free(up->paste_text);
 				  up->paste_text = NULL;
 				  up->paste_size = 0;

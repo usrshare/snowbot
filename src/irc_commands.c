@@ -347,7 +347,7 @@ int weather_channel(irc_session_t* session, const char* restrict channel, struct
     bs1 += bs2;
     unsigned int snowmsg2 = watch_getlength("snow_",channel,t10m,0,NULL,NULL) + watch_getlength("snow^",channel,t10m,0,NULL,NULL);
 
-    float chantemp = 273.15f - 10.0f + sqrtf((float)lasthour);
+    float chantemp = 273.15f - 10.0f + powf((float)lasthour,(1.0f /3.0f));
     //assume 30 messages on average. temperatures will range from -5C to whatever.
 
     wdata->main_temp = chantemp;
@@ -405,7 +405,7 @@ int weather_current_cb(irc_session_t* session, const char* restrict nick, const 
 	int r = load_location(argv[0]+4,up,&wloc);
 
 	if (r) r = !weather_is_channel(argv[0]+5);
-	if (r) r = wloc.city_id = up->cityid;
+	if (r) r = ((wloc.city_id = up->cityid) == 0);
 	if (r) {respond(session,nick,channel,"Can't understand the parameters. Sorry."); return 0;}
     }
 
@@ -443,6 +443,7 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
     if (!oswparams) {respond(session,nick,channel,"Can't see the number of intervals. Sorry."); return 0;} 
 
     int r = load_location(oswparams,up,&wloc);
+	if (r) r = ((wloc.city_id = up->cityid) == 0);
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
 
@@ -479,6 +480,7 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
     if (!oswparams) {respond(session,nick,channel,"Can't see the number of intervals. Sorry."); return 0;} 
 
     int r = load_location(oswparams,up,&wloc);
+	if (r) r = ((wloc.city_id = up->cityid) == 0);
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
 
@@ -616,6 +618,19 @@ int weather_fahrenheit_cb (irc_session_t* session, const char* restrict nick, co
     return 0;
 }
 
+int start_paste_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+	    
+    respond(session,nick,channel,"Paste mode enabled. All input not starting with a dot will be interpreted as strings to paste. End your document by sending a single dot. To insert a string starting with a dot, prepend another dot.");
+
+	    up->mode = BM_PASTE;
+	    up->paste_text = NULL;
+	    up->paste_size = 0;
+    
+    if (argc >= 2) up->paste_title = strdup(argv[1]);
+    return 0;
+}
+
 char* risingblocks[] = {" ","▁","▂","▃","▄","▅","▆","▇","█","▒"};
 
 int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
@@ -627,8 +642,11 @@ int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const 
 
     int bytes[intervals];
     memset(bytes,0,sizeof(int) * intervals);
+    
+    const char* nickparam = argv[1];
+    if (strcmp(argv[1],"*") == 0) nickparam = NULL;
 
-    count_by_period(argv[1],time(NULL) - (seconds * intervals),seconds,intervals,bytes);
+    count_by_period(nickparam,time(NULL) - (seconds * intervals),seconds,intervals,bytes);
 
     char* output = strdup("|");
 
@@ -663,7 +681,10 @@ int charcount_cb (irc_session_t* session, const char* restrict nick, const char*
 
     unsigned int wc = 0;
 
-    unsigned int r = watch_getlength(argv[1],NULL,seconds ? tmin : 0,0,&wc,NULL);
+    const char* nickparam = argv[1];
+    if (strcmp(argv[1],"*") == 0) nickparam = NULL;
+
+    unsigned int r = watch_getlength(nickparam,NULL,seconds ? tmin : 0,0,&wc,NULL);
 
     if (seconds)
 	ircprintf(session,nick,channel,"I've seen %s post %d words (%d bytes) in the last %d seconds.",argv[1],wc,r,seconds);
@@ -687,6 +708,9 @@ struct irc_user_commands cmds[] = {
     {".cc", false, charcount_cb},
     {".ccg", false, charcountgraph_cb},
     {".xr", false, xr_cmd_cb},
+    {".startp", false, start_paste_cb},
+    {".paste", false, start_paste_cb},
+    {".rant", false, start_paste_cb},
     {".about", false, NULL},
 };
 

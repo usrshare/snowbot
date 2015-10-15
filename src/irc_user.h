@@ -25,6 +25,7 @@ struct irc_user_params{
     unsigned int cityid;
     uint8_t usegraphics;
 
+    char* paste_title;
     char* paste_text;
     size_t paste_size;
 };
