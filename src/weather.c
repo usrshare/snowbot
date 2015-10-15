@@ -540,9 +540,9 @@ int make_weather_url(struct weather_loc* loc, char* fullurl) {
 	if (loc->city_id) {
 		snprintf(fullurl,256,APIURL "weather?APPID=" APPID "&id=%d",loc->city_id); return 0; }
 
-	if (loc->zipcode) {
-		snprintf(fullurl,256,APIURL "weather?APPID=" APPID "&zip=%d,%s",
-				loc->zipcode,strlen(loc->sys_country) ? loc->sys_country : "us"); return 0; } //default country
+	if (strlen(loc->postcode)) {
+		snprintf(fullurl,256,APIURL "weather?APPID=" APPID "&zip=%s,%s",
+				loc->postcode,strlen(loc->sys_country) ? loc->sys_country : "us"); return 0; } //default country
 
 	if (strlen(loc->city_name) && strlen(loc->sys_country)) {
 		snprintf(fullurl,256,APIURL "weather?APPID=" APPID "&q=%s,%s",loc->city_name,loc->sys_country); return 0; }
@@ -561,9 +561,9 @@ int make_weather_url_f(struct weather_loc* loc, char* fullurl,int cnt) {
 	if (loc->city_id) {
 		snprintf(fullurl,256,APIURL "forecast?APPID=" APPID "&cnt=%d&id=%d",cnt,loc->city_id); return 0; }
 
-	if (loc->zipcode) {
-		snprintf(fullurl,256,APIURL "forecast?APPID=" APPID "&cnt=%d&zip=%d,%s",
-				cnt,loc->zipcode,strlen(loc->sys_country) ? loc->sys_country : "us"); return 0; } //default country
+	if (strlen(loc->postcode)) {
+		snprintf(fullurl,256,APIURL "forecast?APPID=" APPID "&cnt=%d&zip=%s,%s",
+				cnt,loc->postcode,strlen(loc->sys_country) ? loc->sys_country : "us"); return 0; } //default country
 
 	if (strlen(loc->city_name) && strlen(loc->sys_country)) {
 		snprintf(fullurl,256,APIURL "forecast?APPID=" APPID "&cnt=%d&q=%s,%s",cnt,loc->city_name,loc->sys_country); return 0; }
@@ -582,9 +582,9 @@ int make_weather_url_lf(struct weather_loc* loc, char* fullurl,int cnt) {
 	if (loc->city_id) {
 		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&id=%d",cnt,loc->city_id); return 0; }
 
-	if (loc->zipcode) {
-		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&zip=%d,%s",
-				cnt,loc->zipcode,strlen(loc->sys_country) ? loc->sys_country : "us"); return 0; } //default country
+	if (strlen(loc->postcode)) {
+		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&zip=%s,%s",
+				cnt,loc->postcode,strlen(loc->sys_country) ? loc->sys_country : "us"); return 0; } //default country
 
 	if (strlen(loc->city_name) && strlen(loc->sys_country)) {
 		snprintf(fullurl,256,APIURL "forecast/daily?APPID=" APPID "&cnt=%d&q=%s,%s",cnt,loc->city_name,loc->sys_country); return 0; }

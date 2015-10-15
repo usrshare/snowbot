@@ -67,7 +67,7 @@ struct weather_loc {
 	float coord_lon;
 	float coord_lat;
 	
-	int zipcode;
+	char postcode[16];
 	char sys_country[3];
 	int city_id;
 	char city_name[64];
