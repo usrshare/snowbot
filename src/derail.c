@@ -1,5 +1,7 @@
 // vim: cin:sts=4:sw=4 
 #include "derail.h"
+#include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "irc_common.h"
 
@@ -7,12 +9,16 @@ char d_nickname[10]; //a separate watch for messages
 unsigned int dc_count; //number of consecutive messages
 unsigned int dc_length; //length of consecutive messages
 
+int data_loaded = false;
+//int atexit_set = false;
+
 #define COUNT_THRESHOLD 5
 #define LENGTH_THRESHOLD 300
 
 //this is different from cons_count and cons_length in irc.c.
 //whenever this bot will post a suggestion, the counts and lengths
 //are to be set back to zero.
+
 
 struct derail_sug {
     char nickname[10]; //user who made the suggestion
@@ -22,6 +28,35 @@ struct derail_sug {
 #define SUG_COUNT 32
 
 struct derail_sug derail[SUG_COUNT];
+
+void derail_save(void) {
+    
+    FILE* df = fopen("derail.sug","wb");
+    if (!df) return;
+
+    for (int i=0; i < SUG_COUNT; i++) {
+	fwrite(derail[i].nickname,10,1,df);
+	fwrite(derail[i].text,140,1,df);
+    }
+
+    printf("Derail suggestions saved.\n");
+    fclose(df);
+}
+
+void derail_load(void) {
+    
+    FILE* df = fopen("derail.sug","rb");
+    if (!df) return;
+
+    for (int i=0; i < SUG_COUNT; i++) {
+	fread(derail[i].nickname,10,1,df);
+	fread(derail[i].text,140,1,df);
+    }
+
+    atexit(derail_save);
+    printf("Derail suggestions loaded.\n");
+    fclose(df);
+}
 
 int random_suggestion() {
 
@@ -53,6 +88,11 @@ int empty_suggestion() {
 }
 
 int insert_sug(const char* restrict nickname, const char* restrict text) {
+    
+    if (!data_loaded) {
+	derail_load();
+	data_loaded = true;
+    }
 
     int r = empty_suggestion();
     if (r == -1) return 1;
@@ -66,6 +106,11 @@ int insert_sug(const char* restrict nickname, const char* restrict text) {
 int derail_addmsg(irc_session_t* session,const char* restrict nickname, const char* restrict channel, const char* restrict msg) {
 
     if (!channel) return 1; //ignore PMs.
+
+    if (!data_loaded) {
+	derail_load();
+	data_loaded = true;
+    }
 
     if (strncmp(nickname,d_nickname,10) != 0) {
 	dc_count = 0;
