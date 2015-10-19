@@ -21,6 +21,7 @@ add_executable (snowbot
 		src/irc_watch.c
 		src/http.c
 		src/activity.c
+		src/derail.c
 		src/hashtable.c
 		src/paste.c
 		src/savefile.c

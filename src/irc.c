@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <time.h>
 
+#include "derail.h"
 #include "irc_watch.h"
 #include "irc_commands.h"
 #include "irc_common.h"
@@ -117,6 +118,7 @@ void count_msg(irc_session_t* session, const char* restrict nick, const char* re
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
     watch_addmsg(nick,channel,msg);
+    derail_addmsg(session,nick,channel,msg);
    
     if (ircstrcmp(nick, ibp->msg_current_nickname) == 0) {
 

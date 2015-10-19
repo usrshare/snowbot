@@ -4,6 +4,7 @@
 #include <malloc.h>
 #include <string.h>
 
+#include "derail.h"
 #include "irc_common.h"
 #include "irc_user.h"
 #include "irc_watch.h"
@@ -22,6 +23,23 @@ struct irc_user_commands {
     bool no_parse_parameters; //if true, argc is set to 1 and entire string is stored in argv[0].
     irc_command_cb cb;
 };
+
+const char* wmode_desc( int wmode) {
+
+    switch(wmode) {
+	case WM_CELSIUS: return "°C";
+	case WM_FAHRENHEIT: return "°F";
+	default: return "°K";
+    }
+}
+float convert_temp(float temp_k, int wmode) {
+
+    switch(wmode) {
+	case WM_CELSIUS: return (temp_k - 273.15f); 
+	case WM_FAHRENHEIT: return (((temp_k - 273.15f)*1.8f)+32.0f);
+	default: return temp_k;
+    }
+}
 
 int handle_weather_current(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
@@ -47,17 +65,13 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
 
-    if (up->wmode == WM_CELSIUS)
-	snprintf (weathertmp,255,"%+.1f°C",wdata->main_temp - 273.15); else
-	    snprintf (weathertmp,255,"%+.1f°F",32.0 + ((wdata->main_temp - 273.15) * 1.8f));
+    snprintf (weathertmp,255,"%+.1f%s",convert_temp(wdata->main_temp,up->wmode),wmode_desc(up->wmode));
 
     weathermsg = strrecat(weathermsg,weathertmp);
 
     if (fabsf(wdata->main_temp_max - wdata->main_temp_min > 0.5f)) {
 
-	if (up->wmode == WM_CELSIUS)
-	    snprintf(weathertmp,255," (%+.1f° .. %+.1f°)",wdata->main_temp_min - 273.15,wdata->main_temp_max - 273.15); else
-		snprintf(weathertmp,255," (%+.1f° .. %+.1f°)",32.0 + (wdata->main_temp_min - 273.15) * 1.8,32.0 + (wdata->main_temp_max - 273.15) * 1.8);
+	snprintf(weathertmp,255," (%+.1f° .. %+.1f°)",convert_temp(wdata->main_temp_min,up->wmode),convert_temp(wdata->main_temp_max,up->wmode));
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
 
@@ -114,7 +128,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
     for (int i=0; i<cnt; i++) {
 
 	gmtime_r(&((wdata+i)->dt), &weathertime);
-	snprintf(weathertmp2,16,"  %2d  |",weathertime.tm_mday);
+	snprintf(weathertmp2,16,"%3d ",weathertime.tm_mday);
 	strcat(weathertmp,weathertmp2);
     }
 
@@ -122,34 +136,25 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
     respond(session,nick,channel,weathermsg);
 
-    switch(up->wmode) {
-	case WM_CELSIUS: {
+    snprintf (weathermsg,128,"%s:",wmode_desc(up->wmode));
 
-			     snprintf (weathermsg,128,"°C:");
-
-			     memset(weathertmp,0,sizeof weathertmp);
-			     for (int i=0; i<cnt; i++) {
-				 snprintf(weathertmp2,16,"\00308%-3d\00312%3d\017|",(int)round((wdata+i)->temp_day - 273.15f),(int)round((wdata+i)->temp_night - 273.15f));
-				 strcat(weathertmp,weathertmp2);
-			     }
-			     weathermsg = strrecat(weathermsg,weathertmp);
-			     respond(session,nick,channel,weathermsg);
-
-			     break; }
-	case WM_FAHRENHEIT: {
-
-				snprintf (weathermsg,128,"°F:");
-
-				memset(weathertmp,0,sizeof weathertmp);
-				for (int i=0; i<cnt; i++) {
-				    snprintf(weathertmp2,16,"\00308%-3d\00312%3d\017|",(int)round(( ((wdata+i)->temp_day - 273.15f)*1.8f)+32.0f),(int)round(( ((wdata+i)->temp_night - 273.15f)*1.8f)+32.0f));
-				    strcat(weathertmp,weathertmp2);
-				}
-				weathermsg = strrecat(weathermsg,weathertmp);
-				respond(session,nick,channel,weathermsg);
-
-				break; }
+    memset(weathertmp,0,sizeof weathertmp);
+    for (int i=0; i<cnt; i++) {
+	snprintf(weathertmp2,16,"\00308%3d \017",(int)round(convert_temp((wdata+i)->temp_day,up->wmode)));
+	strcat(weathertmp,weathertmp2);
     }
+    weathermsg = strrecat(weathermsg,weathertmp);
+    respond(session,nick,channel,weathermsg);
+
+    snprintf (weathermsg,128,"%s:",wmode_desc(up->wmode));
+
+    memset(weathertmp,0,sizeof weathertmp);
+    for (int i=0; i<cnt; i++) {
+	snprintf(weathertmp2,16,"\00312%3d \017",(int)round(convert_temp((wdata+i)->temp_night,up->wmode)));
+	strcat(weathertmp,weathertmp2);
+    }
+    weathermsg = strrecat(weathermsg,weathertmp);
+    respond(session,nick,channel,weathermsg);
 
     snprintf (weathermsg,128,"wd:");
 
@@ -165,7 +170,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 		    if (wspd >= 10) fmtst = "\00309";
 
 	if (wspd >= 10) fmted = "\017";
-	snprintf(weathertmp,255,"%s %4.1f %s|", fmtst,(wdata+i)->wind_speed,fmted);
+	snprintf(weathertmp,255,"%s%3.0f %s", fmtst,(wdata+i)->wind_speed,fmted);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
 
@@ -186,8 +191,8 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 	    const struct weather_id* wid = getwid((wdata+i)->weather_id[c]);
 
 	    if (wid->format_on)
-		snprintf(weathertmp2,16,"  %s%s%s  |",wid->format_on,wid->symbol,wid->format_off); else
-		    snprintf(weathertmp2,16,"  %s  |",wid->symbol);
+		snprintf(weathertmp2,16," %s%s%s ",wid->format_on,wid->symbol,wid->format_off); else
+		    snprintf(weathertmp2,16," %s ",wid->symbol);
 	    strcat(weathertmp,weathertmp2);
 	}
 	weathermsg = strrecat(weathermsg,weathertmp);
@@ -223,34 +228,16 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
     respond(session,nick,channel,weathermsg);
 
-    switch(up->wmode) {
-	case WM_CELSIUS: {
+    snprintf (weathermsg,128,"%s:",wmode_desc(up->wmode));
 
-			     snprintf (weathermsg,128,"°C:");
-
-			     memset(weathertmp,0,sizeof weathertmp);
-			     for (int i=0; i<cnt; i++) {
-				 snprintf(weathertmp2,16,"%3d",(int)round((wdata+i)->main_temp - 273.15f));
-				 strcat(weathertmp,weathertmp2);
-			     }
-			     weathermsg = strrecat(weathermsg,weathertmp);
-			     respond(session,nick,channel,weathermsg);
-
-			     break; }
-	case WM_FAHRENHEIT: {
-
-				snprintf (weathermsg,128,"°F:");
-
-				memset(weathertmp,0,sizeof weathertmp);
-				for (int i=0; i<cnt; i++) {
-				    snprintf(weathertmp2,16,"%3d",(int)round(( ((wdata+i)->main_temp - 273.15f)*1.8f)+32.0f));
-				    strcat(weathertmp,weathertmp2);
-				}
-				weathermsg = strrecat(weathermsg,weathertmp);
-				respond(session,nick,channel,weathermsg);
-
-				break; }
+    memset(weathertmp,0,sizeof weathertmp);
+    for (int i=0; i<cnt; i++) {
+	snprintf(weathertmp2,16,"%3d",(int)round(convert_temp((wdata+i)->main_temp,up->wmode)));
+	strcat(weathertmp,weathertmp2);
     }
+    weathermsg = strrecat(weathermsg,weathertmp);
+    respond(session,nick,channel,weathermsg);
+
 
     snprintf(weathermsg,128,"wd:");
 
@@ -322,7 +309,7 @@ int load_location (int argc, const char** argv, struct irc_user_params* up, stru
 	wloc->city_id = strtol(argv[0]+1,&endid,10);
 	if (endid != (argv[0]+1)) return 0; else return 1;
     }
-    
+
     if (argv[0][0] == '@') { //city id
 	strncpy(wloc->postcode,argv[0]+1,16);
 	if (argc == 2) strncpy(wloc->sys_country,argv[1],2);
@@ -330,7 +317,7 @@ int load_location (int argc, const char** argv, struct irc_user_params* up, stru
     }
 
     if (argc == 2) {
-	
+
 	float lat = -91.0f, lon = -181.0f;
 	char* endlat = NULL, *endlon = NULL;
 
@@ -469,7 +456,7 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
     memset(&wdata,0,sizeof (struct weather_data) *cnt);
 
     int r = load_location((endcnt != argv[1]) ? argc-2 : argc-1,(endcnt != argv[1]) ? argv+2: argv+1,up,&wloc);
-	if (r) r = ((wloc.city_id = up->cityid) == 0);
+    if (r) r = ((wloc.city_id = up->cityid) == 0);
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
 
@@ -491,7 +478,7 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
 	respond(session,nick,channel,"Usage: .owl <# of days> #<OWM city ID>, .owm <zip code>[,<2char country code>], .owm <city name>[,<2char country code>], .owm <longitude>,<latitude>"); return 0; }
 
     char* endcnt = NULL;
-    
+
     int cnt = 0;
     cnt = strtol(argv[1],&endcnt,10);
     if (cnt < 0) cnt = 1; if (cnt>16) cnt=16;
@@ -502,7 +489,7 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
     memset(&wdata,0,sizeof wdata);
 
     int r = load_location((endcnt != argv[1]) ? argc-2 : argc-1,(endcnt != argv[1]) ? argv+2 : argv+1,up,&wloc);
-	if (r) r = ((wloc.city_id = up->cityid) == 0);
+    if (r) r = ((wloc.city_id = up->cityid) == 0);
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
 
@@ -642,13 +629,13 @@ int weather_fahrenheit_cb (irc_session_t* session, const char* restrict nick, co
 
 int start_paste_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-	    
+
     respond(session,nick,channel,"Paste mode enabled. All input not starting with a dot will be interpreted as strings to paste. End your document by sending a single dot. To insert a string starting with a dot, prepend another dot.");
 
-	    up->mode = BM_PASTE;
-	    up->paste_text = NULL;
-	    up->paste_size = 0;
-    
+    up->mode = BM_PASTE;
+    up->paste_text = NULL;
+    up->paste_size = 0;
+
     if (argc >= 2) up->paste_title = strdup(argv[1]);
     return 0;
 }
@@ -664,7 +651,7 @@ int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const 
 
     int bytes[intervals];
     memset(bytes,0,sizeof(int) * intervals);
-    
+
     const char* nickparam = argv[1];
     if (strcmp(argv[1],"*") == 0) nickparam = NULL;
 
@@ -716,6 +703,21 @@ int charcount_cb (irc_session_t* session, const char* restrict nick, const char*
     return 0;
 }
 
+int suggest_derail_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <\"suggestion text\">",argv[0]); return 0;}
+    if (argc > 2) { ircprintf(session,nick,channel,"Please use quotation marks before and after the suggestion text."); return 0;}
+
+    int r = insert_sug(nick,argv[1]);
+
+    if (r)
+	ircprintf(session,nick,channel,"Sorry, but the suggestion buffer is currently full.");
+    else
+	ircprintf(session,nick,channel,"Your suggestion has been added.");
+
+    return 0;
+}
+
 struct irc_user_commands cmds[] = {
     {".help", false, helpcmd_cb},
     {".load", false, load_cmd_cb},
@@ -733,6 +735,7 @@ struct irc_user_commands cmds[] = {
     {".startp", false, start_paste_cb},
     {".paste", false, start_paste_cb},
     {".rant", false, start_paste_cb},
+    {".sug", false, suggest_derail_cb},
     {".about", false, NULL},
 };
 
