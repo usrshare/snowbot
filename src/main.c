@@ -9,7 +9,7 @@
 
 void print_usage(void) {
 
-    fprintf(stderr,"Available parameters: [-p port] [-s] [-n nickname] [-c channel] address\n");
+    fprintf(stderr,"Available parameters: [-p port] [-n nickname] [-c channel] address\n");
 }
 
 void inthandler(int sig) {
@@ -36,7 +36,8 @@ int main(int argc, char** argv) {
 		server_port = atoi(optarg);
 		break;
 	    case 's':
-		use_ssl = 1;
+		fprintf(stderr,"SSL connections not supported.\n");
+		exit(1);
 		break;
 	    case 'n':
 		bot_nickname = optarg;
