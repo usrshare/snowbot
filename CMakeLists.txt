@@ -30,9 +30,7 @@ add_executable (snowbot
 	       	src/xrates.c
 		)
 
-include_directories(${CMAKE_SOURCE_DIR}/libircclient/libircclient/include)
-
-target_link_libraries(snowbot m curl json-c ${CMAKE_SOURCE_DIR}/libircclient/libircclient/src/libircclient.a)
+target_link_libraries(snowbot m curl json-c)
 
 install(TARGETS snowbot
 	RUNTIME DESTINATION bin

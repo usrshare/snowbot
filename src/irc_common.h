@@ -1,7 +1,10 @@
 #ifndef IRC_COMMON_H
 #define IRC_COMMON_H
-#include <libircclient.h>
-#include <libirc_rfcnumeric.h>
+
+#include <stdlib.h>
+#include "irc_proto.h"
+//#include <libircclient.h>
+//#include <libirc_rfcnumeric.h>
 
 char* strrecat(char* orig, const char* append);
 

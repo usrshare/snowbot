@@ -1,6 +1,6 @@
 // vim: cin:sts=4:sw=4 
-#include <libircclient.h>
-#include <libirc_rfcnumeric.h>
+//#include <libircclient.h>
+//#include <libirc_rfcnumeric.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -12,6 +12,8 @@
 #include <math.h>
 #include <stddef.h>
 #include <time.h>
+
+#include "irc_proto.h"
 
 #include "derail.h"
 #include "irc_watch.h"
@@ -216,7 +218,7 @@ void connect_cb(irc_session_t* session, const char* event, const char* origin, c
 
     while (chantok) {
 	r = irc_cmd_join( session, chantok, 0);
-	if (r != 0) printf("Can't join %s: %s\n",chantok,irc_strerror(irc_errno(session)));
+	if (r != 0) printf("Can't join %s: %d\n",chantok,r);
 	chantok = strtok_r(NULL,",",&saveptr);
     }
 
@@ -304,14 +306,14 @@ int connect_bot(void* session, char* address, int port, bool use_ssl, char* nick
     } else strncpy(address_copy,address,127);
 
     int r = irc_connect(session,address_copy,port,password,nickname,NULL,"snowbot");
-    if (r != 0) fprintf(stderr,"IRC connection error: %s.\n",irc_strerror(irc_errno(session)));
+    if (r != 0) fprintf(stderr,"IRC connection error %d.\n",r);
     return r;
 }
 
 int loop_bot(void* session) {
 
     int r = irc_run(session);
-    if (r != 0) fprintf(stderr,"irc_run error: %s.\n",irc_strerror(irc_errno(session)));
+    if (r != 0) fprintf(stderr,"irc_run error %d.\n",r);
     printf("Terminating.\n");
     return 0;
 }
