@@ -25,12 +25,13 @@ add_executable (snowbot
 		src/derail.c
 		src/hashtable.c
 		src/paste.c
+		src/pwdhash.c
 		src/savefile.c
 		src/weather.c
 	       	src/xrates.c
 		)
 
-target_link_libraries(snowbot m curl json-c)
+target_link_libraries(snowbot m curl json-c crypto)
 
 install(TARGETS snowbot
 	RUNTIME DESTINATION bin
