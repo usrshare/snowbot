@@ -9,6 +9,7 @@
 #include "irc_user.h"
 #include "irc_watch.h"
 
+#include "pwdhash.h"
 #include "weather.h"
 #include "xrates.h"
 
@@ -718,6 +719,25 @@ int suggest_derail_cb (irc_session_t* session, const char* restrict nick, const 
     return 0;
 }
 
+int hash_sha512_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <\"plaintext\">",argv[0]); return 0;}
+    if (argc > 2) { ircprintf(session,nick,channel,"Please use quotation marks before and after the plaintext."); return 0;}
+
+    unsigned char sha512[64];
+
+    hash_pwd(0,NULL,argv[1],sha512);
+
+    unsigned char hex[129];
+    for(unsigned int i = 0; i < 64; i++)
+             snprintf(hex+(2*i),3,"%02x",sha512[i]);
+
+    hex[128] = 0;
+
+    ircprintf(session,nick,channel,hex);
+
+    return 0;
+}
 struct irc_user_commands cmds[] = {
     {".help", false, helpcmd_cb},
     {".load", false, load_cmd_cb},
@@ -736,6 +756,7 @@ struct irc_user_commands cmds[] = {
     {".paste", false, start_paste_cb},
     {".rant", false, start_paste_cb},
     {".sug", false, suggest_derail_cb},
+    {".sha512", false, hash_sha512_cb},
     {".about", false, NULL},
 };
 
