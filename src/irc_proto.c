@@ -92,6 +92,11 @@ int irc_cmd_msg(irc_session_t* session, const char* restrict target, const char*
     return irc_raw_sendf(session,"PRIVMSG %s :%s",target,msg);
 }
 
+int irc_cmd_notice(irc_session_t* session, const char* restrict target, const char* restrict msg) {
+
+    return irc_raw_sendf(session,"NOTICE %s :%s",target,msg);
+}
+
 int irc_disconnect(irc_session_t* session) {
     shutdown(session->sockfd,SHUT_RDWR);
     return 0;
@@ -130,7 +135,7 @@ int get_irc_tokens (char* string, int argc, const char** argv) {
 }
 
 bool is_channel(const char* origin) {
-    if ((origin[0] == '#') || (origin[0] == '&')) return true;
+    if (strchr("#&!+",origin[0])) return true;
     return false;
 }
 

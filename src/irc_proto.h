@@ -28,6 +28,7 @@ int irc_run(irc_session_t* session);
 int irc_disconnect(irc_session_t* session);
 
 int irc_cmd_msg(irc_session_t* session, const char* restrict target, const char* restrict msg);
+int irc_cmd_notice(irc_session_t* session, const char* restrict target, const char* restrict msg);
 
 int irc_target_get_nick(const char* restrict origin, char* o_nick, size_t o_nick_sz);
 
@@ -35,6 +36,5 @@ int irc_cmd_join(irc_session_t* session, const char* restrict channel, const cha
 
 int irc_set_ctx(irc_session_t* session, void* ctx);
 void* irc_get_ctx(irc_session_t* session);
-
-
 #endif
+
