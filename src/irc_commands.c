@@ -729,10 +729,8 @@ int hash_sha512_cb (irc_session_t* session, const char* restrict nick, const cha
     hash_pwd(0,NULL,argv[1],sha512);
 
     unsigned char hex[129];
-    for(unsigned int i = 0; i < 64; i++)
-             snprintf(hex+(2*i),3,"%02x",sha512[i]);
 
-    hex[128] = 0;
+    hash_hex(sha512,64,hex);
 
     ircprintf(session,nick,channel,hex);
 
