@@ -16,11 +16,18 @@ enum savetypes {
 	ST_INT64,
 };
 
+enum savevis {
+	SV_HIDDEN,
+	SV_READONLY,
+	SV_VISIBLE,
+};
+
 struct saveparam {
 	const char* name;
 	enum savetypes type;
 	size_t varsize; //for strings
 	ptrdiff_t offset;
+	enum savevis visibility;
 };
 
 int setparam(void* data, struct saveparam* params, size_t paramcnt, const char* restrict name, const char* restrict value);

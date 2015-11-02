@@ -16,6 +16,7 @@
 #include "irc_proto.h"
 
 #include "derail.h"
+#include "irc_short.h"
 #include "irc_watch.h"
 #include "irc_commands.h"
 #include "irc_common.h"
@@ -60,6 +61,35 @@ int add_paste_line(irc_session_t* session, struct irc_user_params* up, const cha
     return 0;
 }
 
+bool validchar(char cchar) {
+
+    if (!cchar) return false;
+    if ((cchar >= '0') && (cchar <= '9')) return true;
+    if ((cchar >= 'a') && (cchar <= 'z')) return true;
+    if ((cchar >= 'A') && (cchar <= 'Z')) return true;
+    if (strchr("+-&@#/%?=~_()|!:,.;",cchar)) return true;
+    return false;
+}
+
+char* find_url(const char* restrict msg, char** msgend) {
+
+    char* proto = NULL;
+
+    /*       */ proto = strstr(msg,"https:");
+    if (!proto) proto = strstr(msg,"http:");
+    if (!proto) proto = strstr(msg,"ftp:");
+    if (!proto) proto = strstr(msg,"sftp:");
+    if (!proto) return NULL;
+    
+    char* cchar = proto; 
+
+    while (validchar(*cchar)) cchar++;
+
+    if ((proto > msg) && (*(proto-1) == '(') && (*(cchar-1) == ')')) cchar--;
+
+    if (msgend) *msgend = cchar;
+    return proto; 
+}
 
 int handle_msg(irc_session_t* session, const char* restrict nick, const char* restrict channel, const char* restrict msg) {
 
@@ -172,6 +202,23 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
     } else {
 
 	if (params[0] != NULL) count_msg(session,nick,params[0],params[1]);
+    }
+
+    char* end = params[1] + strlen(params[1]);
+    char* url1 = find_url(params[1],&end);
+
+    if (url1) {
+
+	size_t ulen = end - url1 + 1;
+	char url[ulen];
+	strncpy(url,url1,ulen);
+	url[ulen-1]=0;
+	printf("Found URL: %s\n",url);
+
+	char* shurl = irc_shorten(url);
+
+	ircprintf(session,NULL,params[0],"Short URL: \00312%s\017" ,shurl);
+	if (shurl) free(shurl);
     }
 }
 

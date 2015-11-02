@@ -25,6 +25,8 @@ struct irc_user_params{
     unsigned int cityid;
     uint8_t usegraphics;
 
+    char pwdhash[129];
+
     char* paste_title;
     char* paste_text;
     size_t paste_size;
@@ -44,6 +46,6 @@ int load_user_params(const char* restrict nick, struct irc_user_params* up);
 struct irc_user_params* get_user_params(const char* restrict nick, enum empty_beh add_if_empty);
 int del_user_params(const char* restrict nick, struct irc_user_params* value);
 
-int saveall();
+void saveall();
 
 #endif

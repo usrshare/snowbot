@@ -551,6 +551,7 @@ int set_cmd_cb (irc_session_t* session, const char* restrict nick, const char* r
 	char val[128];
 
 	for (unsigned int i = 0; i < paramcnt; i++) {
+	    if (irc_save_params[i].visibility == 0) continue;
 
 	    int r = getparam(up, irc_save_params, paramcnt, irc_save_params[i].name, val, 128);
 	    if (r == 0) ircprintf (session,nick,channel,"%s = %s",irc_save_params[i].name,val); else ircprintf (session,nick,channel,"%s = ???",irc_save_params[i].name);
