@@ -32,7 +32,7 @@ add_executable (snowbot
 	       	src/xrates.c
 		)
 
-target_link_libraries(snowbot m curl json-c crypto)
+target_link_libraries(snowbot m curl json-c crypto pthread)
 
 install(TARGETS snowbot
 	RUNTIME DESTINATION bin

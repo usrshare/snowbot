@@ -68,6 +68,7 @@ bool validchar(char cchar) {
     if ((cchar >= 'a') && (cchar <= 'z')) return true;
     if ((cchar >= 'A') && (cchar <= 'Z')) return true;
     if (strchr("+-&@#/%?=~_()|!:,.;",cchar)) return true;
+    if (cchar < 0) return true; //unicode shmunicode
     return false;
 }
 
@@ -79,8 +80,8 @@ char* find_url(const char* restrict msg, char** msgend) {
     if (!proto) proto = strstr(msg,"http:");
     if (!proto) proto = strstr(msg,"ftp:");
     if (!proto) proto = strstr(msg,"sftp:");
-    if (!proto) return NULL;
-    
+    if (!proto) { if (msgend) *msgend = NULL; return NULL; }
+
     char* cchar = proto; 
 
     while (validchar(*cchar)) cchar++;
@@ -151,7 +152,7 @@ void count_msg(irc_session_t* session, const char* restrict nick, const char* re
 
     watch_addmsg(nick,channel,msg);
     derail_addmsg(session,nick,channel,msg);
-   
+
     if (ircstrcmp(nick, ibp->msg_current_nickname) == 0) {
 
 	ibp->cons_count++;
@@ -207,18 +208,28 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
     char* end = params[1] + strlen(params[1]);
     char* url1 = find_url(params[1],&end);
 
-    if (url1) {
+    int i=1;
+
+    while (end) {
 
 	size_t ulen = end - url1 + 1;
-	char url[ulen];
-	strncpy(url,url1,ulen);
-	url[ulen-1]=0;
-	printf("Found URL: %s\n",url);
+	if (ulen > 60) {
 
-	char* shurl = irc_shorten(url);
+	    char url[ulen];
+	    strncpy(url,url1,ulen);
+	    url[ulen-1]=0;
+	    printf("Found URL: %s\n",url);
+	    
+	    irc_shorten_and_title(url); //currently only test
 
-	ircprintf(session,NULL,params[0],"Short URL: \00312%s\017" ,shurl);
-	if (shurl) free(shurl);
+	    char* shurl = irc_shorten(url);
+
+	    ircprintf(session,NULL,params[0],"Short URL (#%d): \00312%s\017" ,i,shurl);
+	    if (shurl) free(shurl);
+	}
+
+	i++;
+	url1 = find_url(end,&end);
     }
 }
 
@@ -252,7 +263,7 @@ void join_cb(irc_session_t* session, const char* event, const char* origin, cons
 void connect_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
     printf("Successfully connected to the network.\n");
-	
+
     watch_load();
     atexit(watch_save);
 

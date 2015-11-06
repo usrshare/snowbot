@@ -1,8 +1,11 @@
+// vim: cin:sts=4:sw=4 
 #include <malloc.h>
 #include <string.h>
 #include <stdbool.h>
 #include <curl/curl.h>
+#include <pthread.h>
 
+#include "http.h"
 /* based on http://curl.haxx.se/libcurl/c/getinmemory.html, licensed as: */
 /*
    COPYRIGHT AND PERMISSION NOTICE
@@ -19,14 +22,15 @@
 
 bool curl_initialized = false;
 
+//CURLM* cmhnd = NULL; //multi handle
+
 struct MemoryStruct {
     char *memory;
     size_t size;
 };
 
-    static size_t
-WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
+static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+
     size_t realsize = size * nmemb;
     struct MemoryStruct *mem = (struct MemoryStruct *)userp;
 
@@ -44,9 +48,93 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
     return realsize;
 }
 
-char* make_http_request(char* restrict url, char* restrict postfields) {
+void http_initialize() {
 
-    if (!curl_initialized) { curl_global_init(CURL_GLOBAL_ALL); curl_initialized = true; }
+    curl_global_init(CURL_GLOBAL_ALL);
+    //if (!cmhnd) cmhnd = curl_multi_init();
+    curl_initialized = true;
+}
+
+char* http_escape_url(const char* url, int length) {
+
+    if (!curl_initialized) http_initialize();
+
+    CURL* httpreq = curl_easy_init();
+    if (!httpreq) return NULL;
+
+    char* res = curl_easy_escape(httpreq,url,length);
+
+    curl_easy_cleanup(httpreq);
+
+    return res;
+}
+
+struct async_request_params {
+    char* restrict url;
+    char* restrict postfields;
+    size_t maxdl;
+    http_recv_cb callback;
+    void* cbparam;
+};
+
+static void* async_request_thread (void* param) {
+
+    struct async_request_params* ctx = param;
+
+    CURL* httpreq = curl_easy_init();
+    if (!httpreq) return NULL;
+    
+    CURLcode res;
+
+    res = curl_easy_setopt(httpreq, CURLOPT_URL, ctx->url);
+    if (ctx->postfields) res = curl_easy_setopt(httpreq, CURLOPT_POSTFIELDS, ctx->postfields);
+
+    struct MemoryStruct chunk = {.memory = 0, .size = 0};
+
+
+    res = curl_easy_setopt(httpreq, CURLOPT_WRITEDATA, (void *)&chunk);
+    res = curl_easy_setopt(httpreq, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+
+    res = curl_easy_perform(httpreq);
+
+    const char* restext = NULL;
+
+    if (res != CURLE_OK)
+	restext = curl_easy_strerror(res); else
+	    restext = chunk.memory;
+
+    ctx->callback(restext,ctx->cbparam);
+
+    curl_easy_cleanup(httpreq);
+
+    if (ctx->url) free(ctx->url);
+    if (ctx->postfields) free(ctx->postfields);
+    free (ctx);
+
+    return NULL;
+}
+
+void make_http_request_cb(const char* restrict url, const char* restrict postfields, size_t maxdl, http_recv_cb callback, void* cbparam) {
+
+    if (!curl_initialized) http_initialize();
+
+    struct async_request_params* ap = malloc(sizeof(struct async_request_params));
+
+    ap->url = (url ? strdup(url) : NULL);
+    ap->postfields = (postfields ? strdup(postfields) : NULL);
+    ap->maxdl = maxdl;
+    ap->callback = callback;
+    ap->cbparam = cbparam;
+
+    pthread_t httpthread;
+    pthread_create (&httpthread,NULL,async_request_thread,ap);
+
+    return;
+}
+
+char* make_http_request(const char* restrict url, const char* restrict postfields) {
+
+    if (!curl_initialized) http_initialize();
 
     CURL* httpreq = curl_easy_init();
     if (!httpreq) return NULL;
@@ -67,6 +155,8 @@ char* make_http_request(char* restrict url, char* restrict postfields) {
     if (res != CURLE_OK)
 	restext = strdup(curl_easy_strerror(res)); else
 	    restext = strndup(chunk.memory,chunk.size);
+
+    curl_easy_cleanup(httpreq);
 
     return restext;
 }
