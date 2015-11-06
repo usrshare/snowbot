@@ -32,7 +32,7 @@ char* upload_to_pastebin(const char* restrict nickname, const char* restrict pas
 
     if (r > 8192) { post = malloc(r+1); snprintf(post,r+1,"api_dev_key=" APIKEY "&api_option=paste&api_paste_code=%s&api_paste_name=%s",content_escaped,name_escaped); };
 
-    char* restext = make_http_request(api_url,post);
+    char* restext = make_http_request(api_url,post,0);
 
     curl_free(content_escaped);
     curl_free(name_escaped);

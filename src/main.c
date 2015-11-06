@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "irc.h"
+#include "http.h"
 
 void print_usage(void) {
 
@@ -59,6 +60,8 @@ int main(int argc, char** argv) {
 	exit(1);
     }
 
+
+    http_initialize();
 
     printf("Connecting to %s, port %d, channel %s as %s...\n",server_addr,server_port,bot_channel,bot_nickname);
 

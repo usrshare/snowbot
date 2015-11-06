@@ -16,7 +16,7 @@
 #include "irc_proto.h"
 
 #include "derail.h"
-#include "irc_short.h"
+#include "short.h"
 #include "irc_watch.h"
 #include "irc_commands.h"
 #include "irc_common.h"
@@ -223,7 +223,7 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
 	    irc_shorten_and_title(url); //currently only test
 
 	    char* shurl = irc_shorten(url);
-
+	    
 	    ircprintf(session,NULL,params[0],"Short URL (#%d): \00312%s\017" ,i,shurl);
 	    if (shurl) free(shurl);
 	}

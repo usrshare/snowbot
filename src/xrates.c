@@ -144,7 +144,7 @@ int get_exchange_rates(const char* restrict base, const char* restrict dest, int
 	char* xchgurl = BASEURL "latest.json?app_id=" APPID;
 
 	printf("URL: %s\n",xchgurl);
-	char* response = make_http_request(xchgurl,NULL);
+	char* response = make_http_request(xchgurl,NULL,0);
 
 	printf("Response: %s\n", response);
 	parse_xrates_response(response,o_c,o_v);

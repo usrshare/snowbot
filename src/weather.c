@@ -606,7 +606,7 @@ int get_current_weather(struct weather_loc* loc, struct weather_data* o_wd) {
 
 	printf("URL: %s\n",fullurl);
 
-	char* response = make_http_request(fullurl,NULL);
+	char* response = make_http_request(fullurl,NULL,0);
 
 	printf("Response: %s\n", response);
 
@@ -621,7 +621,7 @@ int get_weather_forecast(struct weather_loc* loc, struct weather_data* o_wd, int
 
 	printf("URL: %s\n",fullurl);
 
-	char* response = make_http_request(fullurl,NULL);
+	char* response = make_http_request(fullurl,NULL,0);
 
 	//printf("Response: %s\n", response);
 
@@ -636,7 +636,7 @@ int get_long_forecast(struct weather_loc* loc, struct forecast_data* o_fd, int c
 
 	printf("URL: %s\n",fullurl);
 
-	char* response = make_http_request(fullurl,NULL);
+	char* response = make_http_request(fullurl,NULL,0);
 
 	//printf("Response: %s\n", response);
 

@@ -1,5 +1,5 @@
 // vim: cin:sts=4:sw=4 
-#include "irc_short.h"
+#include "short.h"
 #include "http.h"
 #include <string.h>
 #include <stdio.h>
@@ -10,7 +10,9 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
     if (!data) return;
 
     char* title1 = strstr(data, "<title>");
+    if (!title1) title1 = strstr(data, "<TITLE>");
     char* title2 = strstr(data, "</title>");
+    if (!title2) title2 = strstr(data, "</TITLE>");
 
     if ((!title1) || (!title2) || (title2 < title1)) {
 
@@ -31,10 +33,17 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
 
 void irc_shorten_and_title(const char* url) {
 
-    make_http_request_cb(url,NULL,8192,irc_shorten_and_title_cb,NULL);	
+    char* urlcpy = strdup(url);
+
+    char* hash = strchr(url,'#');
+    if (hash) *hash = 0;
+
+    make_http_request_cb(urlcpy,NULL,128*1024,irc_shorten_and_title_cb,NULL);	
+
+    free(urlcpy);
 }
 
-const char* irc_shorten(const char* url) {
+char* irc_shorten(const char* url) {
 
     char* escurl = http_escape_url(url,strlen(url));
 
@@ -44,5 +53,5 @@ const char* irc_shorten(const char* url) {
 
     free(escurl);
 
-    return make_http_request(vgdurl,0);
+    return make_http_request(vgdurl,0,0);
 }
