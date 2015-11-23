@@ -761,7 +761,7 @@ struct irc_user_commands cmds[] = {
 
 int handle_commands(irc_session_t* session, const char* restrict nick,const char* restrict channel, const char* msg) {
 
-    char* msgparse = malloc(strlen(msg) + 1);
+    char msgparse [(strlen(msg) + 1)];
     memset(msgparse,0,strlen(msg)+1);
 
     const char* msgv[20]; msgv[0] = msgparse; int msgcur = 0;
@@ -803,6 +803,5 @@ int handle_commands(irc_session_t* session, const char* restrict nick,const char
 	}
     }
 
-    free(msgparse);
     return r;
 }

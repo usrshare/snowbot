@@ -5,9 +5,19 @@
 #include <stdio.h>
 #include <malloc.h>
 
+struct title_cb {
+    int n;
+    char* url;
+    char* title;
+    url_title_cb callback;
+    void* param;
+};
+
 void irc_shorten_and_title_cb(const char* data, void* param) {
 
     if (!data) return;
+    
+    struct title_cb* tcb = param;
 
     char* title1 = strstr(data, "<title>");
     if (!title1) title1 = strstr(data, "<TITLE>");
@@ -17,6 +27,7 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
     if ((!title1) || (!title2) || (title2 < title1)) {
 
 	printf("Unable to extract title from page.\n");
+	if (tcb->callback) tcb->callback(tcb->n, tcb->url, NULL, tcb->param);
 	return;
     }
 
@@ -24,21 +35,27 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
     size_t tlen = title2 - tbegin;
 
     char* title = strndup(tbegin,tlen);
-    
-    printf("Page title: %s\n",title);
+   
 
+    if (tcb->callback) tcb->callback(tcb->n, tcb->url, title, tcb->param);
     free(title);
     return;
 }
 
-void irc_shorten_and_title(const char* url) {
+void irc_shorten_and_title(const char* url, url_title_cb callback, void* param) {
 
     char* urlcpy = strdup(url);
 
     char* hash = strchr(url,'#');
     if (hash) *hash = 0;
 
-    make_http_request_cb(urlcpy,NULL,128*1024,irc_shorten_and_title_cb,NULL);	
+    struct title_cb* tcb = malloc(sizeof(struct title_cb));
+
+    tcb->url = strdup(url);
+    tcb->callback = callback;
+    tcb->param = param;
+
+    make_http_request_cb(urlcpy,NULL,128*1024,irc_shorten_and_title_cb,tcb);	
 
     free(urlcpy);
 }

@@ -44,8 +44,6 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 	return 0;
     }
 
-    printf("<%.*s>\n",(int)realsize,(char*)contents);
-
     memcpy(&(mem->memory[mem->size]), contents, realsize);
     mem->size += realsize;
     mem->memory[mem->size] = 0;

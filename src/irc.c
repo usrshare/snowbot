@@ -180,6 +180,37 @@ void quit_cb(irc_session_t* session, const char* event, const char* origin, cons
 
 }
 
+struct irc_url_params {
+    irc_session_t* session;
+    char* nick;
+    char* channel;
+};
+
+void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
+
+    struct irc_url_params* ctx = param;
+
+    if (title)
+	ircprintf(ctx->session,NULL,ctx->channel,"Page title: \00310%s\017",title);
+
+    if (ctx->nick) free(ctx->nick);
+    if (ctx->channel) free (ctx->channel);
+    if (ctx) free (ctx); 
+}
+
+bool url_titlable(const char* url) {
+
+    if (strstr(url,"youtube.com/")) return true;
+    if (strstr(url,"youtu.be/")) return true;
+    if (strstr(url,"vimeo.com/")) return true;
+    if (strstr(url,"reddit.com/")) return true;
+    if (strstr(url,"redd.it/")) return true;
+    if (strstr(url,"i.imgur.com/")) return false; //prevent i.imgur.com
+    if (strstr(url,"imgur.com/")) return true;
+    if (strstr(url,"twitter.com/")) return true;
+    return false;
+}
+
 void channel_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
     char nick[10];
@@ -213,19 +244,33 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
     while (end) {
 
 	size_t ulen = end - url1 + 1;
+	    
+	char url[ulen];
+	strncpy(url,url1,ulen);
+	url[ulen-1]=0;
+	printf("Found URL: %s\n",url);
+
+	/*
+	 * functionality disabled at request of Rein@##chat
+
 	if (ulen > 60) {
 
-	    char url[ulen];
-	    strncpy(url,url1,ulen);
-	    url[ulen-1]=0;
-	    printf("Found URL: %s\n",url);
-	    
-	    irc_shorten_and_title(url); //currently only test
-
 	    char* shurl = irc_shorten(url);
-	    
 	    ircprintf(session,NULL,params[0],"Short URL (#%d): \00312%s\017" ,i,shurl);
 	    if (shurl) free(shurl);
+	}
+	*/
+
+	if ( (strcmp(nick,"Tubbee")) && (url_titlable(url)) ) {
+
+	    struct irc_url_params* iup = malloc(sizeof(struct irc_url_params));
+	    memset(iup, 0, sizeof(struct irc_url_params));
+
+	    iup->session = session;
+	    iup->nick = NULL;
+	    iup->channel = strdup(params[0]);
+
+	    irc_shorten_and_title(url,irc_url_title_cb,iup); //currently only test
 	}
 
 	i++;
