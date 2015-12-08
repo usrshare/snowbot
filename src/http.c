@@ -24,6 +24,7 @@ bool curl_initialized = false;
 
 //CURLM* cmhnd = NULL; //multi handle
 
+
 struct MemoryStruct {
     char *memory;
     size_t size;

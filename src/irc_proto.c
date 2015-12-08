@@ -199,7 +199,7 @@ int irc_run(irc_session_t* session) {
 
 	if (r < 0) {
 	    if (errno == EINTR) return 1;
-	    perror("Error while reading"); exit(1);
+	    perror("Error while reading"); return 1;
 	}
 
 	p += r;

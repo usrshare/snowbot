@@ -22,6 +22,7 @@
 #include "irc_common.h"
 #include "irc_user.h"
 
+#include "entities.h"
 #include "paste.h"
 #include "weather.h"
 
@@ -72,7 +73,7 @@ bool validchar(char cchar) {
     return false;
 }
 
-char* find_url(const char* restrict msg, char** msgend) {
+char* find_url(const char* restrict msg, const char** msgend) {
 
     char* proto = NULL;
 
@@ -190,8 +191,15 @@ void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
 
     struct irc_url_params* ctx = param;
 
-    if (title)
-	ircprintf(ctx->session,NULL,ctx->channel,"Page title: \00310%s\017",title);
+
+    if ((title) && (strlen(title) > 0)) {
+
+    size_t strl = strlen(title) + 1;
+    char title_unesc[strl];
+
+	html_unescape(title,title_unesc);	
+	ircprintf(ctx->session,NULL,ctx->channel,"Page title: \00310%s\017",title_unesc);
+}
 
     if (ctx->nick) free(ctx->nick);
     if (ctx->channel) free (ctx->channel);
@@ -205,8 +213,8 @@ bool url_titlable(const char* url) {
     if (strstr(url,"vimeo.com/")) return true;
     if (strstr(url,"reddit.com/")) return true;
     if (strstr(url,"redd.it/")) return true;
-    if (strstr(url,"i.imgur.com/")) return false; //prevent i.imgur.com
-    if (strstr(url,"imgur.com/")) return true;
+    //if (strstr(url,"i.imgur.com/")) return false; //prevent i.imgur.com
+    //if (strstr(url,"imgur.com/")) return true;
     if (strstr(url,"twitter.com/")) return true;
     return false;
 }
@@ -236,7 +244,7 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
 	if (params[0] != NULL) count_msg(session,nick,params[0],params[1]);
     }
 
-    char* end = params[1] + strlen(params[1]);
+    const char* end = params[1] + strlen(params[1]);
     char* url1 = find_url(params[1],&end);
 
     int i=1;
@@ -320,8 +328,12 @@ void connect_cb(irc_session_t* session, const char* event, const char* origin, c
     int r = 0;
 
     while (chantok) {
-	r = irc_cmd_join( session, chantok, 0);
-	if (r != 0) printf("Can't join %s: %d\n",chantok,r);
+
+	char* saveptr2 = NULL;
+	char* channame = strtok_r(chantok,":",&saveptr2);
+	char* chankey = strtok_r(NULL,":",&saveptr2);
+	r = irc_cmd_join( session, channame, chankey);
+	if (r != 0) printf("Can't join %s: %d\n",channame,r);
 	chantok = strtok_r(NULL,",",&saveptr);
     }
 
@@ -413,19 +425,31 @@ int connect_bot(void* session, char* address, int port, bool use_ssl, char* nick
     return r;
 }
 
-int loop_bot(void* session) {
-
-    int r = irc_run(session);
-    if (r != 0) fprintf(stderr,"irc_run error %d.\n",r);
-    printf("Terminating.\n");
-    return 0;
-}
-
-
 int disconnect_bot(void* session) {
 
     free(irc_get_ctx(session));
     irc_disconnect(session);
-    hdestroy();
     return 0;
 }
+
+int reconnect_bot(void* session) {
+
+    //reconnects to the same server with the same parameters
+    //without damaging the session context.
+    //usable for connection losses.
+
+    void* ctx = irc_get_ctx(session);
+
+
+
+}
+
+int loop_bot(void* session) {
+
+    int r = irc_run(session);
+    if (r != 0) fprintf(stderr,"irc_run error %d.\n",r);
+    //printf("Terminating.\n");
+    return 0;
+}
+
+

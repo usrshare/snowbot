@@ -23,6 +23,7 @@ add_executable (snowbot
 		src/http.c
 		src/activity.c
 		src/derail.c
+		src/entities.c
 		src/hashtable.c
 		src/paste.c
 		src/pwdhash.c

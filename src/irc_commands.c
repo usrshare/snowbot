@@ -415,25 +415,26 @@ int weather_current_cb(irc_session_t* session, const char* restrict nick, const 
     struct weather_data wdata;
     memset(&wdata,0,sizeof wdata);
 
-    if ((strlen(argv[0]) == 4) && (!up->cityid)) {
-	respond(session,nick,channel,"Usage: .owm #<OWM city ID>, .owm <zip code>[,<2char country code>], .owm <city name>[,<2char country code>], .owm <longitude>,<latitude>"); return 0; }
+    if ((argc == 1) && (!up->cityid)) {
+	respond(session,nick,channel,"Usage: .owm <location>");
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
 
     else {
 	int r = load_location(argc-1, argv+1,up,&wloc);
 
-	if (r) r = !weather_is_channel(argv[0]+5);
+	if ((r) && (argc > 1)) r = !weather_is_channel(argv[1]);
 	if (r) r = ((wloc.city_id = up->cityid) == 0);
 	if (r) {respond(session,nick,channel,"Can't understand the parameters. Sorry."); return 0;}
     }
 
-    if (!weather_is_channel(argv[0]+5)) 
-	get_current_weather( &wloc, &wdata); else
-	    weather_channel(session, argv[0]+5,&wloc,&wdata);
+    if ( (argc > 1) && (weather_is_channel(argv[1])) ) 
+	weather_channel(session, argv[0]+5,&wloc,&wdata);
+    else
+	get_current_weather( &wloc, &wdata);
 
     handle_weather_current(session, nick, channel, &wloc, &wdata);
     return 0;
 }	
-
 int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
@@ -442,21 +443,25 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
     memset(&wloc,0,sizeof wloc);
 
     if ((argc == 1) && (!up->cityid)) {
-	respond(session,nick,channel,"Usage: .owf <# of 3-hour intervals> #<OWM city ID>, .owm <zip code>[,<2char country code>], .owm <city name>[,<2char country code>], .owm <longitude>,<latitude>"); return 0; }
+	respond(session,nick,channel,"Usage: .owf <# of 1-day intervals> <location>");
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
 
     int cnt = 0;
 
     char* endcnt = NULL;
 
-    cnt = strtol(argv[1],&endcnt,10);
+    int r = 1;
 
-    if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 16; if (cnt>40) cnt=40;
-    if (endcnt == argv[1]) cnt = 16;
+    if (argc > 1) 
+    { cnt = strtol(argv[1],&endcnt,10);
+
+	if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 16; if (cnt>40) cnt=40;
+	if (endcnt == argv[1]) cnt = 16; } else cnt = 16;
 
     struct weather_data wdata[cnt];
     memset(&wdata,0,sizeof (struct weather_data) *cnt);
 
-    int r = load_location((endcnt != argv[1]) ? argc-2 : argc-1,(endcnt != argv[1]) ? argv+2: argv+1,up,&wloc);
+    if (argc > 1) r = load_location((endcnt != argv[1]) ? argc-2 : argc-1,(endcnt != argv[1]) ? argv+2: argv+1,up,&wloc);
     if (r) r = ((wloc.city_id = up->cityid) == 0);
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
@@ -467,7 +472,6 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
     }
     return 0;
 }	
-
 int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
@@ -475,21 +479,26 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
     struct weather_loc wloc;
     memset(&wloc,0,sizeof wloc);
 
-    if ((strlen(argv[0]) == 4) && (!up->cityid)) {
-	respond(session,nick,channel,"Usage: .owl <# of days> #<OWM city ID>, .owm <zip code>[,<2char country code>], .owm <city name>[,<2char country code>], .owm <longitude>,<latitude>"); return 0; }
+    if ((argc == 1) && (!up->cityid)) {
+	respond(session,nick,channel,"Usage: .owl <# of 1-day intervals> <location>");
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
+
+    int cnt = 0;
 
     char* endcnt = NULL;
 
-    int cnt = 0;
-    cnt = strtol(argv[1],&endcnt,10);
-    if (cnt < 0) cnt = 1; if (cnt>16) cnt=16;
+    int r = 1;
 
-    if (endcnt == argv[1]) cnt = 7;
+    if (argc > 1) 
+    { cnt = strtol(argv[1],&endcnt,10);
+
+	if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 16; if (cnt>40) cnt=40;
+	if (endcnt == argv[1]) cnt = 16; } else cnt = 16;
 
     struct forecast_data wdata[cnt];
-    memset(&wdata,0,sizeof wdata);
+    memset(&wdata,0,sizeof (struct forecast_data) *cnt);
 
-    int r = load_location((endcnt != argv[1]) ? argc-2 : argc-1,(endcnt != argv[1]) ? argv+2 : argv+1,up,&wloc);
+    if (argc > 1) r = load_location((endcnt != argv[1]) ? argc-2 : argc-1,(endcnt != argv[1]) ? argv+2: argv+1,up,&wloc);
     if (r) r = ((wloc.city_id = up->cityid) == 0);
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
