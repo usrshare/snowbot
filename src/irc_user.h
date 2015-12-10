@@ -25,6 +25,7 @@ struct irc_user_params{
     unsigned int cityid;
     uint8_t usegraphics;
 
+    unsigned int channel_count;
     uint8_t logged_in;
     char pwdhash[129];
 

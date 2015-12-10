@@ -93,6 +93,80 @@ char* find_url(const char* restrict msg, const char** msgend) {
     return proto; 
 }
 
+#ifdef __DATE__
+#define COMPILEDATE __DATE__
+#else
+#define COMPILEDATE "unknown"
+#endif
+
+int handle_ctcp(irc_session_t* session, const char* restrict nick, const char* restrict msg) {
+
+    printf("[CTCP][%10s]:%s\n",nick,msg);
+
+    if (strcmp(msg,"VERSION") == 0) {
+
+	//version
+
+	char ctcpresp[512];
+	encode_ctcp("VERSION snowbot:" COMPILEDATE ":unknown",ctcpresp);
+	irc_cmd_notice(session,nick,ctcpresp);
+    }
+
+}
+
+int decode_ctcp(const char* restrict msg, char* o_msg) {
+
+    if (msg[0] != 1) return 1;
+    if (msg[strlen(msg)-1] != 1) return 1;
+	
+    const char* curchar = msg+1;
+    char* outchar = o_msg;
+
+    while ( (*curchar > 1) && (curchar < (msg+strlen(msg))) ) {
+    
+	if (*curchar == 16) {
+    
+	switch(*(curchar+1)) {
+	    case '0': *outchar = 0; break;
+	    case 'n': *outchar = '\n'; break;
+	    case 'r': *outchar = '\r'; break;
+	    case 16: *outchar = 16; break;
+	}
+	curchar += 2;
+	} else {
+
+	*outchar = *curchar;	
+	curchar++;
+	}
+	outchar++;
+    }
+    *outchar =0;
+}
+
+int encode_ctcp(const char* restrict msg, char* o_msg) {
+
+    const char* curchar = msg;
+
+    o_msg[0] = 1;
+    char* outchar = o_msg+1;
+
+    while ( (*curchar > 0) && (curchar < (msg+strlen(msg))) ) {
+    
+	switch(*curchar+1) {
+	    case 0:    *outchar = 16; *(outchar+1) = 0;    outchar++; break;
+	    case '\n': *outchar = 16; *(outchar+1) = '\n'; outchar++; break;
+	    case '\r': *outchar = 16; *(outchar+1) = '\r'; outchar++; break;
+	    case 16 :  *outchar = 16; *(outchar+1) = 16;   outchar++; break;
+	    default: *outchar = *curchar; break;	
+	}
+	outchar++;
+	curchar++;
+    }
+    *outchar =1;
+    *(outchar+1) =0;
+    return 0;
+}
+
 int handle_msg(irc_session_t* session, const char* restrict nick, const char* restrict channel, const char* restrict msg) {
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
@@ -103,6 +177,14 @@ int handle_msg(irc_session_t* session, const char* restrict nick, const char* re
 
     int r = handle_commands(session,nick,channel,msg); 
     if (r == 0) return 0;
+
+    if (msg[0] == 1) {
+
+	char ctcp[512];
+	decode_ctcp(msg,ctcp);
+	
+	return handle_ctcp(session,nick,ctcp);
+    }
 
     switch(up->mode) {
 	case BM_NONE:
@@ -172,6 +254,7 @@ void quit_cb(irc_session_t* session, const char* event, const char* origin, cons
 
     printf("User %s quit the server.\n",nick);
 
+    struct irc_bot_params* ibp = irc_get_ctx(session);
     struct irc_user_params* up = get_user_params(nick, EB_NULL);
 
     if (up) {
@@ -181,6 +264,22 @@ void quit_cb(irc_session_t* session, const char* event, const char* origin, cons
 
 }
 
+void part_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
+
+    char nick[10];
+    irc_target_get_nick(origin,nick,10);
+
+    printf("User %s left channel %s.\n",nick,params[0]);
+	
+    struct irc_bot_params* ibp = irc_get_ctx(session);
+    if (ircstrcmp(nick, ibp->msg_current_nickname) != 0) {
+    
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+    up->channel_count--;
+    
+    }
+
+}
 
 struct irc_url_params {
     irc_session_t* session;
@@ -297,7 +396,6 @@ void privmsg_cb(irc_session_t* session, const char* event, const char* origin, c
 
     handle_msg(session,nick,NULL,params[1]); // handle private message
 
-
 }
 
 void join_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
@@ -308,10 +406,18 @@ void join_cb(irc_session_t* session, const char* event, const char* origin, cons
     irc_target_get_nick(origin,nick,10);
 
     if (ircstrcmp(nick,ibp->irc_nickname) == 0) {
-	printf("Joined channel %s.\n",params[0]);
-	ibp->channel_joined = 1;
-    }
 
+	//I joined the channel.
+
+	printf("User %s joined channel %s.\n",nick,params[0]);
+	ibp->channel_joined = 1;
+    } else {
+
+	//Someone else did.
+
+	struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+	up->channel_count++;
+    }
 
 }
 
@@ -401,6 +507,7 @@ void* create_bot(char* irc_channel) {
     callbacks.event_numeric = numeric_cb;
     callbacks.event_join = join_cb;
     callbacks.event_quit = quit_cb;
+    callbacks.event_part = part_cb;
     callbacks.event_channel = channel_cb;
     callbacks.event_privmsg = privmsg_cb;
 
@@ -443,7 +550,7 @@ int reconnect_bot(void* session) {
     void* ctx = irc_get_ctx(session);
 
 
-
+    return 0;
 }
 
 int loop_bot(void* session) {

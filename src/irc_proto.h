@@ -14,6 +14,7 @@ struct irc_callbacks {
 	irc_numeric_cb event_numeric;
 	irc_event_cb event_join;
 	irc_event_cb event_quit;
+	irc_event_cb event_part;
 	irc_event_cb event_channel;
 	irc_event_cb event_privmsg;
 };

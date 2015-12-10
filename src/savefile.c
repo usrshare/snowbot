@@ -162,6 +162,7 @@ int loaddata(char* filename, void* data, struct saveparam* params, size_t paramc
 		if (r <= 0) continue;
 
 		if (r > 1) {
+		//removing the \n from the line
 		if (gline[r-1] == '\n') gline[r-1] = 0;
 		if (gline[r-1] == '\r') gline[r-1] = 0;
 		}

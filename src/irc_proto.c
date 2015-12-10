@@ -171,6 +171,10 @@ int irc_parse(irc_session_t* session, const char* prefix, int argc, const char**
 	    if (session->cb.event_quit) session->cb.event_quit(session,"quit",prefix,argv+1,argc-1);
     }
     
+    if ((argc >= 1) && (strcmp(argv[0],"PART") == 0)) {
+	    if (session->cb.event_quit) session->cb.event_part(session,"part",prefix,argv+1,argc-1);
+    }
+    
     if ((argc >= 3) && (strcmp(argv[0],"PRIVMSG") == 0)) {
 
 	if (is_channel(argv[1])) {
