@@ -3,12 +3,12 @@
 #include <openssl/evp.h>
 #include <string.h>
 
-int hash_hex(const unsigned char* restrict hash, size_t hash_sz, char* hex) {
+int hash_hex(const char* restrict hash, size_t hash_sz, char* hex) {
 
     // hex is assumed to be at least hash_sz*2+1 bytes long.
 
     for (int i=0; i < hash_sz; i++) {
-	snprintf(hex+(2*i),3,"%02x", hash[i]);
+	snprintf(hex+(2*i),3,"%02x", (unsigned char*)(hash)[i]);
     }
     return 0;
 }

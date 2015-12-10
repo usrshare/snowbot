@@ -181,6 +181,7 @@ void quit_cb(irc_session_t* session, const char* event, const char* origin, cons
 
 }
 
+
 struct irc_url_params {
     irc_session_t* session;
     char* nick;
@@ -257,6 +258,7 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
 	strncpy(url,url1,ulen);
 	url[ulen-1]=0;
 	printf("Found URL: %s\n",url);
+	add_url_to_buf(url);
 
 	/*
 	 * functionality disabled at request of Rein@##chat

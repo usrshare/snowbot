@@ -10,6 +10,7 @@
 #include "irc_watch.h"
 
 #include "pwdhash.h"
+#include "short.h"
 #include "weather.h"
 #include "xrates.h"
 
@@ -601,10 +602,12 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 
 	} while (curtok && (ci < c));
 
-	int r = get_exchange_rates(NULL,NULL,ci,res);
+	int r = get_exchange_rates(ci,res);
 
-	for (int i=0; i < ci; i++)
-	    ircprintf(session,nick,channel,"%s = $%.3f ($1 = %.3f %s)",res[i].symbol,1 / res[i].rate, res[i].rate, res[i].symbol);
+	if (r == 0) {
+	    for (int i=0; i < ci; i++)
+		ircprintf(session,nick,channel,"%s = $%.3f ($1 = %.3f %s)",res[i].symbol,1 / res[i].rate, res[i].rate, res[i].symbol); }
+	else ircprintf(session,nick,channel,"Error while retrieving exchange rates."); 
     }
 
     if (argc == 4) {
@@ -616,9 +619,11 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 	strncpy(res[0].symbol,argv[2],4);
 	strncpy(res[1].symbol,argv[3],4);
 
-	int r = get_exchange_rates(NULL,NULL,2,res);
+	int r = get_exchange_rates(2,res);
 
-	ircprintf(session,nick,channel,"%.3f %s = %.3f %s",res[0].symbol,count, res[1].symbol, count * res[1].rate / res[0].rate);
+	if (r == 0) 
+	    ircprintf(session,nick,channel,"%.3f %s = %.3f %s",res[0].symbol,count, res[1].symbol, count * res[1].rate / res[0].rate);
+	else ircprintf(session,nick,channel,"Error while retrieving exchange rates."); 
     }
 
     return 0;
@@ -734,11 +739,11 @@ int hash_sha512_cb (irc_session_t* session, const char* restrict nick, const cha
     if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <\"plaintext\">",argv[0]); return 0;}
     if (argc > 2) { ircprintf(session,nick,channel,"Please use quotation marks before and after the plaintext."); return 0;}
 
-    unsigned char sha512[64];
+    char sha512[64];
 
     hash_pwd(0,NULL,argv[1],sha512);
 
-    unsigned char hex[129];
+    char hex[129];
 
     hash_hex(sha512,64,hex);
 
@@ -746,6 +751,71 @@ int hash_sha512_cb (irc_session_t* session, const char* restrict nick, const cha
 
     return 0;
 }
+
+int set_password_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    if (channel) {
+	ircprintf(session,nick,channel,"\"%s\" is a private-only command. Do not use it in IRC channels.\n"); return 0;}
+
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+
+    if (strlen(up->pwdhash)) {
+
+	printf("User %s already has a password.\n",nick);
+
+	if (argc != 3) { ircprintf(session,nick,channel,"Usage: %s <\"old_password\"> <\"new_password\">",argv[0]); return 0;}
+	
+	char sha512_o[64];
+	hash_pwd(0,NULL,argv[1],sha512_o);
+	char hex_o[129];
+	hash_hex(sha512_o,64,hex_o);
+
+	int r = strncmp(up->pwdhash,hex_o,129);
+	if (r) {ircprintf(session,nick,channel,"Wrong password."); return 0;}
+	
+	char sha512[64];
+	hash_pwd(0,NULL,argv[1],sha512);
+	char hex[129];
+	hash_hex(sha512,64,hex);
+
+	strncpy(up->pwdhash,hex,129);
+	ircprintf(session,nick,channel,"Password set."); 
+
+    } else {
+
+	printf("User %s doesn't have a password.\n",nick);
+
+	if (argc != 2) { ircprintf(session,nick,channel,"Usage: %s <\"new_password\">",argv[0]); return 0;}
+
+	char sha512[64];
+	hash_pwd(0,NULL,argv[1],sha512);
+	char hex[129];
+	hash_hex(sha512,64,hex);
+	strncpy(up->pwdhash,hex,129);
+	ircprintf(session,nick,channel,"Password set."); 
+
+    }
+    return 0;
+}
+
+int shorten_url_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    char last_url[512]; last_url[0] = 0;  
+
+    int r = search_url((argc >= 2) ? argv[1] : NULL,last_url);
+
+    if (r == 1) { ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n"); return 0;}
+    if (r == 2) { ircprintf(session,nick,channel,"Request \"%s\" matches more than 1 URL. Please use a more specific request.\n"); return 0;}
+
+    if (strlen(last_url) > 0) {	    
+	char* shurl = irc_shorten(last_url);
+	ircprintf(session,nick,channel,"Short URL: \00312%s\017",shurl);
+	if (shurl) free(shurl);
+    }
+
+    return 0;
+}
+
 struct irc_user_commands cmds[] = {
     {".help", false, helpcmd_cb},
     {".load", false, load_cmd_cb},
@@ -765,6 +835,8 @@ struct irc_user_commands cmds[] = {
     {".rant", false, start_paste_cb},
     {".sug", false, suggest_derail_cb},
     {".sha512", false, hash_sha512_cb},
+    {".setpwd", false, set_password_cb},
+    {".su", false, shorten_url_cb},
     {".about", false, NULL},
 };
 

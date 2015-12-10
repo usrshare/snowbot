@@ -5,6 +5,44 @@
 #include <stdio.h>
 #include <malloc.h>
 
+#define URL_CIRCBUF_COUNT 20
+#define URL_LENGTH 512 //maximum IRC msg size anyway
+
+unsigned int urlbuf_cursor = 0;
+int urlbuf_last = -1;
+char urlbuf[URL_CIRCBUF_COUNT][URL_LENGTH];
+
+int add_url_to_buf(const char* url) {
+    strncpy(urlbuf[urlbuf_cursor],url,URL_LENGTH);
+    urlbuf[urlbuf_cursor][URL_LENGTH-1] = 0; //forcibly terminate
+    urlbuf_last = urlbuf_cursor;
+    urlbuf_cursor = (urlbuf_cursor + 1) % URL_CIRCBUF_COUNT;
+    return 0;
+}
+
+int search_url(const char* restrict pattern, char* o_url) {
+
+    int n=0, r=-1;
+
+    if (pattern == NULL) {
+	if (urlbuf_last < 0) return 1;
+	n = 1; r = urlbuf_last;
+    } else {
+
+	for (int i=0; i < URL_CIRCBUF_COUNT; i++) {
+
+	    if (strstr(urlbuf[i],pattern)) {n++; r = i;}
+
+	}
+    }
+    if (n == 0) return 1;
+    if (n > 1) return 2;
+
+    strncpy(o_url,urlbuf[r],URL_LENGTH);
+    o_url[URL_LENGTH-1] = 0;
+    return 0;
+}
+
 struct title_cb {
     int n;
     char* url;
@@ -16,7 +54,7 @@ struct title_cb {
 void irc_shorten_and_title_cb(const char* data, void* param) {
 
     if (!data) return;
-    
+
     struct title_cb* tcb = param;
 
     char* title1 = strstr(data, "<title>");
@@ -35,7 +73,7 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
     size_t tlen = title2 - tbegin;
 
     char* title = strndup(tbegin,tlen);
-   
+
 
     if (tcb->callback) tcb->callback(tcb->n, tcb->url, title, tcb->param);
     free(title);

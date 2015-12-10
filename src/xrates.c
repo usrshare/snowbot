@@ -37,6 +37,7 @@ int update_exchange_rate(int o_c, struct exchange_rate* o_v, const char* symbol,
 
 int fill_json_rates_fields(int o_c, struct exchange_rate* o_v, enum json_type ft, const char* fn, json_object* fv) {
     if (fv == NULL) return 1;
+    if (ft != json_type_double) return 1;
 
     float rate = json_object_get_double(fv);
 
@@ -120,7 +121,7 @@ int parse_xrates_response(char* response, int o_c, struct exchange_rate* o_v) {
 	printf("Something is wrong. Timeline's JSON isn't an object, but a %s\n",json_type_to_name(json_object_get_type(xobj)));
 	return 1; }
 
-    int curw = parse_json_xrates(xobj,o_c,o_v);
+    parse_json_xrates(xobj,o_c,o_v);
     json_tokener_free(jt);
     return 0;
 }
@@ -137,7 +138,7 @@ int get_exchange_cached(int o_c, struct exchange_rate* o_v) {
     return 0;
 }
 
-int get_exchange_rates(const char* restrict base, const char* restrict dest, int o_c, struct exchange_rate* o_v) {
+int get_exchange_rates(int o_c, struct exchange_rate* o_v) {
 
     if ((time(NULL) - last_update) > 3600) {
 
@@ -145,6 +146,8 @@ int get_exchange_rates(const char* restrict base, const char* restrict dest, int
 
 	printf("URL: %s\n",xchgurl);
 	char* response = make_http_request(xchgurl,NULL,0);
+
+	if (!response) return 1;
 
 	printf("Response: %s\n", response);
 	parse_xrates_response(response,o_c,o_v);

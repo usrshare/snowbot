@@ -6,6 +6,6 @@ struct exchange_rate {
 	float rate;
 };
 
-int get_exchange_rates(const char* restrict base, const char* restrict dest, int o_c, struct exchange_rate* o_v);
+int get_exchange_rates(int o_c, struct exchange_rate* o_v);
 
 #endif

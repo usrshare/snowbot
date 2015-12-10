@@ -2,6 +2,9 @@
 #ifndef SHORT_H
 #define SHORT_H
 
+int add_url_to_buf(const char* url);
+int search_url(const char* restrict pattern, char* o_url);
+
 typedef void (*url_title_cb) (int n, const char* url, const char* title, void* param);
 
 char* irc_shorten(const char* url); //don't forget to free();
