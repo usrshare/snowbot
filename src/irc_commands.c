@@ -34,6 +34,7 @@ const char* wmode_desc( int wmode) {
     switch(wmode) {
 	case WM_CELSIUS: return "°C";
 	case WM_FAHRENHEIT: return "°F";
+	case WM_KELVIN: return "°K";
 	default: return "°K";
     }
 }
@@ -42,6 +43,7 @@ float convert_temp(float temp_k, int wmode) {
     switch(wmode) {
 	case WM_CELSIUS: return (temp_k - 273.15f); 
 	case WM_FAHRENHEIT: return (((temp_k - 273.15f)*1.8f)+32.0f);
+	case WM_KELVIN: return temp_k; 
 	default: return temp_k;
     }
 }
@@ -643,6 +645,14 @@ int weather_celsius_cb (irc_session_t* session, const char* restrict nick, const
     up->wmode = WM_CELSIUS;
     return 0;
 }
+
+int weather_kelvin_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+    respond(session,nick,channel,"Weather responses set to Kelvin.");
+    up->wmode = WM_KELVIN;
+    return 0;
+}
+
 int weather_fahrenheit_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
     respond(session,nick,channel,"Weather responses set to Fahrenheit.");
@@ -935,6 +945,7 @@ struct irc_user_commands cmds[] = {
     {".set",    false, false, set_cmd_cb},
     {".utc",    false, false, utc_cmd_cb},
     {".w_c",    false, false, weather_celsius_cb},
+    {".w_k",    false, false, weather_kelvin_cb},
     {".w_f",    false, false, weather_fahrenheit_cb},
     {".owm",    false, false, weather_current_cb},
     {".owf",    false, false, weather_forecast_cb},
@@ -972,7 +983,12 @@ int handle_commands(irc_session_t* session, const char* restrict origin, const c
 	    case '"':
 		escaping = !escaping; i++; break;
 	    case ' ':
-		if (!escaping) { msgparse[o] = 0; i++; o++; if (strlen(msgv[msgcur])) {msgcur++; msgv[msgcur] = msgparse+o; }}
+		if (!escaping) {
+		    while (msg[i+1] == ' ') i++; //skip
+		    if (msg[i+1] == 0) break; 
+		    msgparse[o] = 0; i++; o++;
+		    if (strlen(msgv[msgcur])) {
+			msgcur++; msgv[msgcur] = msgparse+o; }}
 		else { msgparse[o] = msg[i]; i++; o++; }	break;
 	    default:
 		msgparse[o] = msg[i]; i++; o++; break;

@@ -15,6 +15,7 @@ extern struct hashtable* userht;
 enum weather_modes {
     WM_CELSIUS = 0,
     WM_FAHRENHEIT = 1,
+    WM_KELVIN = 2,
 };
 
 struct irc_user_params{
