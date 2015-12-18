@@ -17,12 +17,15 @@
 #include <math.h>
 #include <time.h>
 
+#include <pthread.h>
+
 typedef int (*irc_command_cb) (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv);
 
 struct irc_user_commands {
 
     const char* name;
     bool no_parse_parameters; //if true, argc is set to 1 and entire string is stored in argv[0].
+    bool use_full_nickname; //if true, nick will pass whole nickname, including hostname
     irc_command_cb cb;
 };
 
@@ -130,7 +133,11 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
     for (int i=0; i<cnt; i++) {
 
 	gmtime_r(&((wdata+i)->dt), &weathertime);
-	snprintf(weathertmp2,16,"%3d ",weathertime.tm_mday);
+
+	char* daycolor = "";
+	if (weathertime.tm_wday == 6) daycolor = "\00312";
+	else if (weathertime.tm_wday == 0) daycolor = "\00304";
+	snprintf(weathertmp2,16,"%s%3d \017",daycolor,weathertime.tm_mday);
 	strcat(weathertmp,weathertmp2);
     }
 
@@ -764,7 +771,7 @@ int set_password_cb (irc_session_t* session, const char* restrict nick, const ch
 	printf("User %s already has a password.\n",nick);
 
 	if (argc != 3) { ircprintf(session,nick,channel,"Usage: %s <\"old_password\"> <\"new_password\">",argv[0]); return 0;}
-	
+
 	char sha512_o[64];
 	hash_pwd(0,NULL,argv[1],sha512_o);
 	char hex_o[129];
@@ -772,7 +779,7 @@ int set_password_cb (irc_session_t* session, const char* restrict nick, const ch
 
 	int r = strncmp(up->pwdhash,hex_o,129);
 	if (r) {ircprintf(session,nick,channel,"Wrong password."); return 0;}
-	
+
 	char sha512[64];
 	hash_pwd(0,NULL,argv[1],sha512);
 	char hex[129];
@@ -798,12 +805,65 @@ int set_password_cb (irc_session_t* session, const char* restrict nick, const ch
     return 0;
 }
 
+int check_login_cb (irc_session_t* session, const char* restrict origin, const char* restrict channel, size_t argc, const char** argv) {
+
+    char nick[10];
+    irc_target_get_nick(origin,nick,10);
+
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+
+    if (up->logged_in) {
+
+	ircprintf(session,nick,channel,"You're logged in."); 
+
+    } else {
+
+	ircprintf(session,nick,channel,"You're not logged in.");
+	return 0;
+    }
+    return 0;
+}
+
+int login_cb (irc_session_t* session, const char* restrict origin, const char* restrict channel, size_t argc, const char** argv) {
+
+    char nick[10];
+    irc_target_get_nick(origin,nick,10);
+    
+    if (channel) {
+	ircprintf(session,nick,channel,"\"%s\" is a private-only command. Do not use it in IRC channels.\n"); return 0;}
+
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+
+    if (strlen(up->pwdhash)) {
+
+	if (argc != 2) { ircprintf(session,nick,channel,"Usage: %s <\"password\">",argv[0]); return 0;}
+
+	char sha512_o[64];
+	hash_pwd(0,NULL,argv[1],sha512_o);
+	char hex_o[129];
+	hash_hex(sha512_o,64,hex_o);
+
+	int r = strncmp(up->pwdhash,hex_o,129);
+	if (r) {ircprintf(session,nick,channel,"Wrong password."); return 0;}
+
+	strncpy(up->fullnick,origin,129);
+	up->logged_in = 1;
+	ircprintf(session,nick,channel,"Logged in successfully."); 
+
+    } else {
+
+	ircprintf(session,nick,channel,"First, set your password using the \".setpwd\" command.");
+	return 0;
+    }
+    return 0;
+}
+
 int shorten_url_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     char last_url[512]; last_url[0] = 0;  
 
     int r = search_url((argc >= 2) ? argv[1] : NULL,last_url);
-
+    
     if (r == 1) { ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n"); return 0;}
     if (r == 2) { ircprintf(session,nick,channel,"Request \"%s\" matches more than 1 URL. Please use a more specific request.\n"); return 0;}
 
@@ -814,33 +874,88 @@ int shorten_url_cb (irc_session_t* session, const char* restrict nick, const cha
     }
 
     return 0;
+	
+}
+
+struct ison_param {
+    irc_session_t* session;
+    char* restrict nick;
+    char* restrict channel;
+    int count;
+    const char** nicknames;
+    bool* statuses;
+};
+void* ison_thread_func (void* param) {
+
+    struct ison_param* ctx = param;
+
+    int r = ison_request(ctx->session,ctx->count,ctx->nicknames,ctx->statuses);
+
+    if (r) { ircprintf(ctx->session,ctx->nick,ctx->channel,"Error %d.",r); return 0; }
+
+    for (int i=0; i < ctx->count; i++) {
+	ircprintf(ctx->session,ctx->nick,ctx->channel,"%s is %s.",ctx->nicknames[i],ctx->statuses[i] ? "online" : "offline");
+    }
+
+    free(ctx->nick);
+    if (ctx->channel) free(ctx->channel);
+    for (int i=0; i < ctx->count; i++) free((void*)ctx->nicknames[i]);
+    free(ctx->nicknames);
+    free(ctx->statuses);
+    free(ctx);
+    return NULL;
+}
+
+int ison_test_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+    
+    if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <nickname> [nickname] ...",argv[0]); return 0;}
+
+    struct ison_param* ip = malloc(sizeof(struct ison_param));
+    
+    ip->session = session;
+    ip->nick = strdup(nick);
+    ip->channel = channel ? strdup(channel) : NULL;
+    ip->count = argc-1;
+    ip->nicknames = malloc(sizeof(const char*) * ip->count);
+    for (int i=0; i < ip->count; i++) ip->nicknames[i] = strdup(argv[i+1]);
+    ip->statuses = malloc(sizeof(bool) * ip->count);
+    memset(ip->statuses,0,sizeof(bool) * ip->count);
+
+    pthread_t ison_thread;
+
+    pthread_create(&ison_thread,NULL,ison_thread_func,ip);
+
+    return 0;
 }
 
 struct irc_user_commands cmds[] = {
-    {".help", false, helpcmd_cb},
-    {".load", false, load_cmd_cb},
-    {".save", false, save_cmd_cb},
-    {".set", false, set_cmd_cb},
-    {".utc", false, utc_cmd_cb},
-    {".w_c", false, weather_celsius_cb},
-    {".w_f", false, weather_fahrenheit_cb},
-    {".owm", false, weather_current_cb},
-    {".owf", false, weather_forecast_cb},
-    {".owl", false, weather_longforecast_cb},
-    {".cc", false, charcount_cb},
-    {".ccg", false, charcountgraph_cb},
-    {".xr", false, xr_cmd_cb},
-    {".startp", false, start_paste_cb},
-    {".paste", false, start_paste_cb},
-    {".rant", false, start_paste_cb},
-    {".sug", false, suggest_derail_cb},
-    {".sha512", false, hash_sha512_cb},
-    {".setpwd", false, set_password_cb},
-    {".su", false, shorten_url_cb},
-    {".about", false, NULL},
+    {".help",   false, false, helpcmd_cb},
+    {".load",   false, false, load_cmd_cb},
+    {".save",   false, false, save_cmd_cb},
+    {".set",    false, false, set_cmd_cb},
+    {".utc",    false, false, utc_cmd_cb},
+    {".w_c",    false, false, weather_celsius_cb},
+    {".w_f",    false, false, weather_fahrenheit_cb},
+    {".owm",    false, false, weather_current_cb},
+    {".owf",    false, false, weather_forecast_cb},
+    {".owl",    false, false, weather_longforecast_cb},
+    {".cc",     false, false, charcount_cb},
+    {".ccg",    false, false, charcountgraph_cb},
+    {".xr",     false, false, xr_cmd_cb},
+    {".startp", false, false, start_paste_cb},
+    {".paste",  false, false, start_paste_cb},
+    {".rant",   false, false, start_paste_cb},
+    {".sug",    false, false, suggest_derail_cb},
+    {".sha512", false, false, hash_sha512_cb},
+    {".setpwd", false, false, set_password_cb},
+    {".su",     false, false, shorten_url_cb},
+    {".login",  false, true,  login_cb},
+    {".checkl", false, true,  check_login_cb},
+    //{".ison",   false, false, ison_test_cb},
+    {".about",  false, false, NULL},
 };
 
-int handle_commands(irc_session_t* session, const char* restrict nick,const char* restrict channel, const char* msg) {
+int handle_commands(irc_session_t* session, const char* restrict origin, const char* restrict nick,const char* restrict channel, const char* msg) {
 
     char msgparse [(strlen(msg) + 1)];
     memset(msgparse,0,strlen(msg)+1);
@@ -879,8 +994,8 @@ int handle_commands(irc_session_t* session, const char* restrict nick,const char
 	if ((strcmp(cmds[i].name, msgv[0]) == 0) && (cmds[i].cb)) {
 
 	    if (cmds[i].no_parse_parameters)
-		r = cmds[i].cb(session,nick,channel,1,&msg); else
-		    r = cmds[i].cb(session,nick,channel,msgcur,msgv);
+		r = cmds[i].cb(session,(cmds[i].use_full_nickname ? origin : nick),channel,1,&msg); else
+		    r = cmds[i].cb(session,(cmds[i].use_full_nickname ? origin : nick),channel,msgcur,msgv);
 	}
     }
 

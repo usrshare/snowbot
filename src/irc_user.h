@@ -28,6 +28,7 @@ struct irc_user_params{
     unsigned int channel_count;
     uint8_t logged_in;
     char pwdhash[129];
+    char fullnick[129]; // including the ident
 
     char* paste_title;
     char* paste_text;

@@ -28,6 +28,8 @@ int irc_connect(irc_session_t* session, const char* restrict address, int port, 
 int irc_run(irc_session_t* session);
 int irc_disconnect(irc_session_t* session);
 
+int irc_raw_sendf(irc_session_t* session, const char* fmt, ...);
+
 int irc_cmd_msg(irc_session_t* session, const char* restrict target, const char* restrict msg);
 int irc_cmd_notice(irc_session_t* session, const char* restrict target, const char* restrict msg);
 

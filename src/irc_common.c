@@ -21,13 +21,14 @@ char* strrecat(char* orig, const char* append) {
 
 int irccharcasecmp(const char c1, const char c2) {
 
-    //as defined by RFC 1459, the characters {}| (91~93)and []\(123~125)
+    //as defined by RFC 1459 and 2812,
+    //the characters {}|~ (91~94) and []\^ (123~126)
     //are case-equivalent.
 
-    if ((c1 < 'A') || (c1 > '}')) return c1-c2;
-    if ((c2 < 'A') || (c2 > '}')) return c1-c2;
-    if ((c1 == '^') || (c1 == '_')) return c1-c2;
-    if ((c2 == '^') || (c2 == '_')) return c1-c2;
+    if ((c1 < 'A') || (c1 > '~')) return c1-c2;
+    if ((c2 < 'A') || (c2 > '~')) return c1-c2;
+    if ((c1 == '_') || (c1 == '`')) return c1-c2;
+    if ((c2 == '_') || (c2 == '`')) return c1-c2;
 
     return (c1 & 0x5F) - (c2 & 0x5F);
 
@@ -112,4 +113,57 @@ int ircprintf (irc_session_t* session, const char* restrict target, const char* 
 
     va_end(vargs);
     return r;
+}
+
+int decode_ctcp(const char* restrict msg, char* o_msg) {
+
+    if (msg[0] != 1) return 1;
+    if (msg[strlen(msg)-1] != 1) return 1;
+	
+    const char* curchar = msg+1;
+    char* outchar = o_msg;
+
+    while ( (*curchar > 1) && (curchar < (msg+strlen(msg))) ) {
+    
+	if (*curchar == 16) {
+    
+	switch(*(curchar+1)) {
+	    case '0': *outchar = 0; break;
+	    case 'n': *outchar = '\n'; break;
+	    case 'r': *outchar = '\r'; break;
+	    case 16: *outchar = 16; break;
+	}
+	curchar += 2;
+	} else {
+
+	*outchar = *curchar;	
+	curchar++;
+	}
+	outchar++;
+    }
+    *outchar =0;
+    return 0;
+}
+int encode_ctcp(const char* restrict msg, char* o_msg) {
+
+    const char* curchar = msg;
+
+    o_msg[0] = 1;
+    char* outchar = o_msg+1;
+
+    while ( (*curchar > 0) && (curchar < (msg+strlen(msg))) ) {
+    
+	switch(*curchar+1) {
+	    case 0:    *outchar = 16; *(outchar+1) = 0;    outchar++; break;
+	    case '\n': *outchar = 16; *(outchar+1) = '\n'; outchar++; break;
+	    case '\r': *outchar = 16; *(outchar+1) = '\r'; outchar++; break;
+	    case 16 :  *outchar = 16; *(outchar+1) = 16;   outchar++; break;
+	    default: *outchar = *curchar; break;	
+	}
+	outchar++;
+	curchar++;
+    }
+    *outchar =1;
+    *(outchar+1) =0;
+    return 0;
 }

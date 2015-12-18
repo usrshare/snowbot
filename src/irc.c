@@ -9,6 +9,7 @@
 #include <string.h>
 #include <search.h>
 
+#include <pthread.h>
 #include <math.h>
 #include <stddef.h>
 #include <time.h>
@@ -112,62 +113,11 @@ int handle_ctcp(irc_session_t* session, const char* restrict nick, const char* r
 	irc_cmd_notice(session,nick,ctcpresp);
     }
 
-}
-
-int decode_ctcp(const char* restrict msg, char* o_msg) {
-
-    if (msg[0] != 1) return 1;
-    if (msg[strlen(msg)-1] != 1) return 1;
-	
-    const char* curchar = msg+1;
-    char* outchar = o_msg;
-
-    while ( (*curchar > 1) && (curchar < (msg+strlen(msg))) ) {
-    
-	if (*curchar == 16) {
-    
-	switch(*(curchar+1)) {
-	    case '0': *outchar = 0; break;
-	    case 'n': *outchar = '\n'; break;
-	    case 'r': *outchar = '\r'; break;
-	    case 16: *outchar = 16; break;
-	}
-	curchar += 2;
-	} else {
-
-	*outchar = *curchar;	
-	curchar++;
-	}
-	outchar++;
-    }
-    *outchar =0;
-}
-
-int encode_ctcp(const char* restrict msg, char* o_msg) {
-
-    const char* curchar = msg;
-
-    o_msg[0] = 1;
-    char* outchar = o_msg+1;
-
-    while ( (*curchar > 0) && (curchar < (msg+strlen(msg))) ) {
-    
-	switch(*curchar+1) {
-	    case 0:    *outchar = 16; *(outchar+1) = 0;    outchar++; break;
-	    case '\n': *outchar = 16; *(outchar+1) = '\n'; outchar++; break;
-	    case '\r': *outchar = 16; *(outchar+1) = '\r'; outchar++; break;
-	    case 16 :  *outchar = 16; *(outchar+1) = 16;   outchar++; break;
-	    default: *outchar = *curchar; break;	
-	}
-	outchar++;
-	curchar++;
-    }
-    *outchar =1;
-    *(outchar+1) =0;
     return 0;
 }
 
-int handle_msg(irc_session_t* session, const char* restrict nick, const char* restrict channel, const char* restrict msg) {
+
+int handle_msg(irc_session_t* session, const char* restrict origin, const char* restrict nick, const char* restrict channel, const char* restrict msg) {
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
@@ -175,7 +125,7 @@ int handle_msg(irc_session_t* session, const char* restrict nick, const char* re
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
-    int r = handle_commands(session,nick,channel,msg); 
+    int r = handle_commands(session,origin,nick,channel,msg); 
     if (r == 0) return 0;
 
     if (msg[0] == 1) {
@@ -275,7 +225,7 @@ void part_cb(irc_session_t* session, const char* event, const char* origin, cons
     if (ircstrcmp(nick, ibp->msg_current_nickname) != 0) {
     
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-    up->channel_count--;
+    //up->channel_count--;
     
     }
 
@@ -311,7 +261,7 @@ bool url_titlable(const char* url) {
     if (strstr(url,"youtube.com/")) return true;
     if (strstr(url,"youtu.be/")) return true;
     if (strstr(url,"vimeo.com/")) return true;
-    if (strstr(url,"reddit.com/")) return true;
+    //if (strstr(url,"reddit.com/")) return true;
     if (strstr(url,"redd.it/")) return true;
     //if (strstr(url,"i.imgur.com/")) return false; //prevent i.imgur.com
     //if (strstr(url,"imgur.com/")) return true;
@@ -338,7 +288,7 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
     }
 
     if (handle_this_message) {
-	handle_msg(session, nick, params[0], handle_ptr);
+	handle_msg(session, origin, nick, params[0], handle_ptr);
     } else {
 
 	if (params[0] != NULL) count_msg(session,nick,params[0],params[1]);
@@ -394,7 +344,7 @@ void privmsg_cb(irc_session_t* session, const char* event, const char* origin, c
     irc_target_get_nick(origin,nick,10);
     //printf("[   !!PRIVATE!!] [%10s]:%s\n",nick,params[1]);
 
-    handle_msg(session,nick,NULL,params[1]); // handle private message
+    handle_msg(session,origin,nick,NULL,params[1]); // handle private message
 
 }
 
@@ -416,7 +366,12 @@ void join_cb(irc_session_t* session, const char* event, const char* origin, cons
 	//Someone else did.
 
 	struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-	up->channel_count++;
+    
+	//fullnick stores the complete nickname of the user.
+	//that includes the hostname.
+	if (strncmp(origin,up->fullnick,129)) up->logged_in = 0;
+	strncpy(up->fullnick,origin,129);
+	//up->channel_count++;
     }
 
 }
@@ -450,6 +405,72 @@ void connect_cb(irc_session_t* session, const char* event, const char* origin, c
     if (r == 0) perror("Can't create user hashtable");
 }
 
+int ison_count = 0;
+char* ison_nicknames = NULL;
+bool* ison_statuses = NULL;
+pthread_cond_t ison_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t ison_condm = PTHREAD_MUTEX_INITIALIZER;
+
+void ison_response_cb(irc_session_t* session, unsigned int event, const char* origin, const char** params, unsigned int count) {
+
+	if ((!ison_count) || (!ison_nicknames) || (!ison_statuses)) return;
+
+	char* saveptr = NULL;
+
+	char* curtok = strtok_r(ison_nicknames," ",&saveptr);
+	int i=0;
+
+	while ((curtok) && (i < ison_count)) {
+
+	    if (strstr(params[1],curtok))
+		ison_statuses[i] = true;
+
+	    curtok = strtok_r(NULL," ",&saveptr);
+	    i++;
+	}
+
+	pthread_mutex_lock(&ison_condm);
+	ison_count = 0;
+	pthread_cond_signal(&ison_cond);
+	pthread_mutex_unlock(&ison_condm);
+    
+	return;
+}
+
+int ison_request(irc_session_t* session, int count, const char** nicknames, bool* o_statuses) {
+
+	if ((!count) || (!nicknames) || (!o_statuses)) return 1;;
+
+	if ((ison_count) || (ison_nicknames) || (ison_statuses)) return 2;
+
+	char tempnick[506]; tempnick[0] = 0; int left=506;
+
+	for (int i=0; i < count; i++) {
+	    strncat(tempnick,nicknames[i],left);
+	    left -= strlen(nicknames[i]);
+	    strncat(tempnick," ",left);
+	    left --;
+	}
+
+	if (left < 0) return 3;
+
+	pthread_mutex_lock(&ison_condm);
+	
+	ison_count = count;
+	ison_statuses = o_statuses;
+	ison_nicknames = strdup(tempnick);
+	
+	irc_raw_sendf(session, "ISON %s", tempnick);
+	
+	while (ison_count != 0) pthread_cond_wait(&ison_cond,&ison_condm);
+	pthread_mutex_unlock(&ison_condm);
+
+	free(ison_nicknames);
+	ison_nicknames = NULL;
+	ison_statuses = NULL;
+	return 0;
+}
+
 void numeric_cb(irc_session_t* session, unsigned int event, const char* origin, const char** params, unsigned int count) {
 
     switch(event) {
@@ -479,6 +500,12 @@ void numeric_cb(irc_session_t* session, unsigned int event, const char* origin, 
 	case 375: // MOTD start
 	case 372: // MOTD
 	case 376: // MOTD end
+	    break;
+
+	case 303: // ISON response
+
+	    printf("Received ISON response.\n");
+	    ison_response_cb(session,event,origin,params,count);
 	    break;
 	default:
 	    printf("Received event %u with %u parameters:\n",event,count);
