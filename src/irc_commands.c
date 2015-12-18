@@ -502,8 +502,8 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
     if (argc > 1) 
     { cnt = strtol(argv[1],&endcnt,10);
 
-	if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 16; if (cnt>40) cnt=40;
-	if (endcnt == argv[1]) cnt = 16; } else cnt = 16;
+	if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 7; if (cnt>40) cnt=40;
+	if (endcnt == argv[1]) cnt = 7; } else cnt= 7;
 
     struct forecast_data wdata[cnt];
     memset(&wdata,0,sizeof (struct forecast_data) *cnt);
