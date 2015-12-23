@@ -199,35 +199,35 @@ void count_msg(irc_session_t* session, const char* restrict nick, const char* re
 
 void quit_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-    char nick[10];
-    irc_target_get_nick(origin,nick,10);
-
-    printf("User %s quit the server.\n",nick);
-
-    struct irc_bot_params* ibp = irc_get_ctx(session);
-    struct irc_user_params* up = get_user_params(nick, EB_NULL);
-
-    if (up) {
-	save_user_params(nick,up);
-	del_user_params(nick,up);
-    }
+//    char nick[10];
+//    irc_target_get_nick(origin,nick,10);
+//
+//    printf("User %s quit the server.\n",nick);
+//
+//    struct irc_bot_params* ibp = irc_get_ctx(session);
+//    struct irc_user_params* up = get_user_params(nick, EB_NULL);
+//
+//    if (up) {
+//	save_user_params(nick,up);
+//	del_user_params(nick,up);
+//    }
 
 }
 
 void part_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-    char nick[10];
-    irc_target_get_nick(origin,nick,10);
-
-    printf("User %s left channel %s.\n",nick,params[0]);
-	
-    struct irc_bot_params* ibp = irc_get_ctx(session);
-    if (ircstrcmp(nick, ibp->msg_current_nickname) != 0) {
-    
-    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-    //up->channel_count--;
-    
-    }
+//    char nick[10];
+//    irc_target_get_nick(origin,nick,10);
+//
+//    printf("User %s left channel %s.\n",nick,params[0]);
+//	
+//    struct irc_bot_params* ibp = irc_get_ctx(session);
+//    if (ircstrcmp(nick, ibp->msg_current_nickname) != 0) {
+//    
+//    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+//    //up->channel_count--;
+//    
+//    }
 
 }
 

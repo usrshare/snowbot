@@ -583,7 +583,6 @@ int set_cmd_cb (irc_session_t* session, const char* restrict nick, const char* r
 
 
 int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
-    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
     if (argc == 1) {
 	respond(session,nick,channel,"Usage: .xr [currency list], .xr [number] [src currency] [dest currency]"); return 0;
@@ -673,7 +672,8 @@ int start_paste_cb (irc_session_t* session, const char* restrict nick, const cha
     return 0;
 }
 
-char* risingblocks[] = {" ","▁","▂","▃","▄","▅","▆","▇","█","▒"};
+char* risingvblocks[] = {" ","▁","▂","▃","▄","▅","▆","▇","█","▒"};
+char* risinghblocks[] = {" ","▏","▎","▍","▌","▋","▊","▉","█","▒"};
 
 int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
@@ -698,10 +698,9 @@ int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const 
 	if (bytes[i] > maxbytes) maxbytes = bytes[i];
 
     for (int i=0; i < intervals; i++)
-	if (bytes[i] == 0) output = strrecat(output," "); else
 	{
-	    int fill = (bytes[i] * 8 / maxbytes) + 1;
-	    output = strrecat(output,risingblocks[fill]);
+	    int fill = bytes[i] ? ((bytes[i] * 8 / maxbytes) + 1) : 0;
+	    output = strrecat(output,risingvblocks[fill]);
 	}
 
     output = strrecat(output,"|");
@@ -874,8 +873,8 @@ int shorten_url_cb (irc_session_t* session, const char* restrict nick, const cha
 
     int r = search_url((argc >= 2) ? argv[1] : NULL,last_url);
     
-    if (r == 1) { ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n"); return 0;}
-    if (r == 2) { ircprintf(session,nick,channel,"Request \"%s\" matches more than 1 URL. Please use a more specific request.\n"); return 0;}
+    if (r == 1) { ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n",argv[1]); return 0;}
+    if (r == 2) { ircprintf(session,nick,channel,"Request \"%s\" matches more than 1 URL. Please use a more specific request.\n",argv[1]); return 0;}
 
     if (strlen(last_url) > 0) {	    
 	char* shurl = irc_shorten(last_url);
