@@ -75,5 +75,5 @@ int saveall_htcb(const char* restrict key, void* value, void* ctx) {
 void saveall() {
 
 	ht_all(userht,saveall_htcb,NULL);
-	return 0;
+	return;
 }

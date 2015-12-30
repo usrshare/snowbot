@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "irc_common.h"
+#include "savefile.h"
 
 char d_nickname[10]; //a separate watch for messages
 unsigned int dc_count; //number of consecutive messages
@@ -31,7 +32,7 @@ struct derail_sug derail[SUG_COUNT];
 
 void derail_save(void) {
     
-    FILE* df = fopen("derail.sug","wb");
+    FILE* df = sfopen("derail.sug","wb");
     if (!df) return;
 
     for (int i=0; i < SUG_COUNT; i++) {
@@ -45,7 +46,7 @@ void derail_save(void) {
 
 void derail_load(void) {
     
-    FILE* df = fopen("derail.sug","rb");
+    FILE* df = sfopen("derail.sug","rb");
     if (!df) return;
 
     for (int i=0; i < SUG_COUNT; i++) {

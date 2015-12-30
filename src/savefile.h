@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 enum savetypes {
 	ST_STRING,
@@ -29,6 +30,9 @@ struct saveparam {
 	ptrdiff_t offset;
 	enum savevis visibility;
 };
+
+int findsavedir(void); //initialize
+FILE* sfopen(const char* restrict filename, const char* restrict mode);
 
 int setparam(void* data, struct saveparam* params, size_t paramcnt, const char* restrict name, const char* restrict value);
 int getparam(void* data, struct saveparam* params, size_t paramcnt, const char* restrict name, char* o_value, size_t o_size);

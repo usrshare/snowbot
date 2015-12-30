@@ -13,6 +13,10 @@ const char* bs[] = {
     "wnd",
     "infowars",
     "rt",
+    "dailycaller",
+    "naturalnews",
+    "globalresearch",
+    "returnofkings",
     "sputniknews",
     "sputnikne", //.ws
     "fugees",
@@ -36,7 +40,7 @@ unsigned int newmsg_i = 0;
 
 void watch_save(void) {
 
-    FILE* ws = fopen("irc.watch","wb");
+    FILE* ws = sfopen("irc.watch","wb");
     if (!ws) return;
 
     fwrite(&newmsg_i,sizeof(int),1,ws);
@@ -57,7 +61,7 @@ void watch_save(void) {
 
 void watch_load(void) {
 
-    FILE* ws = fopen("irc.watch","rb");
+    FILE* ws = sfopen("irc.watch","rb");
     if (!ws) return;
 
     fread(&newmsg_i,sizeof(int),1,ws);

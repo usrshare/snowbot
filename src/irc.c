@@ -36,6 +36,7 @@ irc_callbacks_t callbacks;
 #define WALL_BEGINS 200
 #define WALL_ENDS 100
 
+int save_initialized = 0;
 
 struct irc_bot_params{
 
@@ -518,6 +519,9 @@ void numeric_cb(irc_session_t* session, unsigned int event, const char* origin, 
 }
 
 void* create_bot(char* irc_channel) {
+
+    if (!save_initialized) { findsavedir(); save_initialized = 1;}
+
     memset( &callbacks, 0, sizeof(callbacks));
 
     struct irc_bot_params* new_params = malloc(sizeof(struct irc_bot_params));
