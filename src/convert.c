@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <strings.h>
 
 enum convtype {
@@ -103,6 +104,12 @@ unsigned int measure_type_count (const char* measure, uint64_t* mask) {
 
 struct convert_rate* find_rate (const char* measure, enum convtype type) {
 
+	for (int i = 0; i < rate_c; i++)
+		if ( (strcmp(measure,rates[i].symbol) == 0) &&
+				(rates[i].type == type) ) {
+			return &rates[i];
+		}
+	
 	for (int i = 0; i < rate_c; i++)
 		if ( (strcasecmp(measure,rates[i].symbol) == 0) &&
 				(rates[i].type == type) ) {
