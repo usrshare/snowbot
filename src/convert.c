@@ -22,6 +22,18 @@ struct convert_rate {
 	double zero; //zero point in comparison to {1.0, 0.0}
 };
 
+int conv_errno = 0;
+
+const char* conv_strerror[] = {
+	"Operation completed successfully",
+	"Invalid source measure",
+	"Invalid destination measure",
+	"Incompatible measures",
+	"Ambiguous measure combination",
+	"Couldn't find compatible source measure",
+	"Couldn't find compatible destination measure"
+};
+
 struct convert_rate rates[] = {
 	{CT_MASS, "g", 1.0, 0.0},
 	{CT_MASS, "kg", 1000.0, 0.0},
@@ -159,20 +171,26 @@ double convert_value (double in_value, const char* src, const char* dest) {
 	cnt1 = measure_type_count (src, &mask1);
 	cnt2 = measure_type_count (dest, &mask2);
 
-	if (!cnt1) return NAN; //couldn't find source measure
-	if (!cnt2) return NAN; //couldn't find dest measure
+	if (!cnt1) { conv_errno = 1; return NAN; }
+	//couldn't find source measure
+	if (!cnt2) { conv_errno = 2; return NAN; }
+	//couldn't find dest measure
 
-	if ((mask1 & mask2) == 0) return NAN; //measures are incompatible
+	if ((mask1 & mask2) == 0) { conv_errno = 3; return NAN;}
+	//measures are incompatible
 
-	if (popcount_4(mask1 & mask2) > 1) return NAN; //more than one compatible measure type
+	if (popcount_4(mask1 & mask2) > 1) { conv_errno = 4; return NAN;}
+	//more than one compatible measure type
 
 	enum convtype restype = type_from_mask(mask1 & mask2);
 
 	struct convert_rate* crate1 = find_rate(src,restype);
 	struct convert_rate* crate2 = find_rate(dest,restype);
 
-	if (!crate1) return NAN; //couldn't find source measure
-	if (!crate2) return NAN; //couldn't find dest measure
+	if (!crate1) { conv_errno = 5; return NAN;}
+	//couldn't find source measure
+	if (!crate2) { conv_errno = 6; return NAN;} //couldn't find dest measure
 
+	conv_errno = 0;
 	return (in_value - crate1->zero) * crate1->mult / crate2->mult + crate2->zero;
 };

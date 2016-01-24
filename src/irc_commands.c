@@ -652,7 +652,7 @@ int convert_cb (irc_session_t* session, const char* restrict nick, const char* r
 	double res = convert_value(count, argv[2], argv[3]);
 
 	if (!isnan(res)) ircprintf(session,nick,channel,"%.3f %s = %.3f %s",count, argv[2], res, argv[3]);
-	else ircprintf(session,nick,channel,"Error while converting."); 
+	else ircprintf(session,nick,channel,"Error while converting: %s.",conv_strerror[conv_errno]); 
     }
 
     return 0;
