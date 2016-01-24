@@ -37,7 +37,7 @@ int update_exchange_rate(int o_c, struct exchange_rate* o_v, const char* symbol,
 
 int fill_json_rates_fields(int o_c, struct exchange_rate* o_v, enum json_type ft, const char* fn, json_object* fv) {
     if (fv == NULL) return 1;
-    if (ft != json_type_double) return 1;
+    if ((ft != json_type_int) && (ft != json_type_double)) return 1;
 
     float rate = json_object_get_double(fv);
 

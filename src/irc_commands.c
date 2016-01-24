@@ -9,6 +9,7 @@
 #include "irc_user.h"
 #include "irc_watch.h"
 
+#include "convert.h"
 #include "pwdhash.h"
 #include "short.h"
 #include "weather.h"
@@ -638,6 +639,26 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 
 }
 
+int convert_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    if (argc == 1) {
+	respond(session,nick,channel,"Usage: %s [number] [src measure] [dest measure]"); return 0;
+    }	
+
+    if (argc == 4) {
+
+	float count = atof(argv[1]);
+
+	float res = convert_value(count, argv[2], argv[3]);
+
+	if (!isnan(res)) ircprintf(session,nick,channel,"%.3f %s = %.3f %s",count, argv[2], res, argv[3]);
+	else ircprintf(session,nick,channel,"Error while converting."); 
+    }
+
+    return 0;
+
+}
+
 int weather_celsius_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
     respond(session,nick,channel,"Weather responses set to Celsius.");
@@ -961,6 +982,7 @@ struct irc_user_commands cmds[] = {
     {".su",     false, false, shorten_url_cb},
     {".login",  false, true,  login_cb},
     {".checkl", false, true,  check_login_cb},
+    {".cv",	false, false, convert_cb},
     //{".ison",   false, false, ison_test_cb},
     {".about",  false, false, NULL},
 };
@@ -984,7 +1006,7 @@ int handle_commands(irc_session_t* session, const char* restrict origin, const c
 	    case ' ':
 		if (!escaping) {
 		    while (msg[i+1] == ' ') i++; //skip
-		    if (msg[i+1] == 0) break; 
+		    if (msg[i+1] == 0) {i++; break;}
 		    msgparse[o] = 0; i++; o++;
 		    if (strlen(msgv[msgcur])) {
 			msgcur++; msgv[msgcur] = msgparse+o; }}
