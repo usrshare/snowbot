@@ -647,9 +647,9 @@ int convert_cb (irc_session_t* session, const char* restrict nick, const char* r
 
     if (argc == 4) {
 
-	float count = atof(argv[1]);
+	double count = atof(argv[1]);
 
-	float res = convert_value(count, argv[2], argv[3]);
+	double res = convert_value(count, argv[2], argv[3]);
 
 	if (!isnan(res)) ircprintf(session,nick,channel,"%.3f %s = %.3f %s",count, argv[2], res, argv[3]);
 	else ircprintf(session,nick,channel,"Error while converting."); 

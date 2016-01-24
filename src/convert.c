@@ -18,8 +18,8 @@ enum convtype {
 struct convert_rate {
 	enum convtype type;
 	const char* symbol;
-	float mult; //
-	float zero; //zero point in comparison to {1.0, 0.0}
+	double mult; //
+	double zero; //zero point in comparison to {1.0, 0.0}
 };
 
 struct convert_rate rates[] = {
@@ -31,6 +31,7 @@ struct convert_rate rates[] = {
 	{CT_MASS, "lb", 453.59237, 0.0}, //pound
 	{CT_MASS, "ton", 907184.74, 0.0}, // short ton
 	{CT_MASS, "lt", 1016046.909, 0.0}, //long ton
+	{CT_MASS, "mp", 2.1765113e-11, 0.0}, //planck mass
 	{CT_LENGTH, "m", 1.0, 0.0},
 	{CT_LENGTH, "km", 1e3, 0.0},
 	{CT_LENGTH, "cm", 0.01, 0.0},
@@ -39,7 +40,18 @@ struct convert_rate rates[] = {
 	{CT_LENGTH, "in", 0.0254, 0.0},
 	{CT_LENGTH, "ft", 0.3048, 0.0},
 	{CT_LENGTH, "yd", 0.9144, 0.0},
+	{CT_LENGTH, "rod", 5.0292, 0.0},
+	{CT_LENGTH, "ch", 20.1168, 0.0}, //chain
+	{CT_LENGTH, "furlong", 201.168, 0.0},
 	{CT_LENGTH, "mi", 1609.344, 0.0},
+	{CT_LENGTH, "mile", 1609.344, 0.0},
+	{CT_LENGTH, "ly", 9460730472580800, 0.0}, //light year
+	{CT_LENGTH, "l.y.", 9460730472580800, 0.0}, //light year
+	{CT_LENGTH, "pc",  3.0857e16, 0.0}, //parsec
+	{CT_LENGTH, "parsec", 3.0857e16, 0.0}, //parsec
+	{CT_LENGTH, "au", 149597870700, 0.0}, //astronomical unit
+	{CT_LENGTH, "LD", 384400000, 0.0}, //lunar distance
+	{CT_LENGTH, "lp", 1.616199e-35, 0.0}, //planck length
 	{CT_AREA, "m2", 1.0, 0.0},
 	{CT_AREA, "cm2", 1e-4, 0.0},
 	{CT_AREA, "km2", 1e6, 0.0},
@@ -79,7 +91,11 @@ struct convert_rate rates[] = {
 	{CT_TIME, "hr", 3600, 0.0},
 	{CT_TIME, "d", 24*3600, 0.0},
 	{CT_TIME, "day", 24*3600, 0.0},
+	{CT_TIME, "wk", 7*24*3600, 0.0},
+	{CT_TIME, "week", 7*24*3600, 0.0},
+	{CT_TIME, "fortnight", 14*24*3600, 0.0},
 	{CT_TIME, "yr", 31557600, 0.0}, //julian year, 365.25 days
+	{CT_TIME, "tp", 5.3910632e-44, 0.0}, //planck time
 	{CT_TEMP, "C", 1.0, 0.0}, //celsius
 	{CT_TEMP, "F", 5/9.0, 32.0}, //fahrenheit
 	{CT_TEMP, "K", 1.0, 273.15}, //kelvin	
@@ -134,7 +150,7 @@ int type_from_mask(uint64_t x) {
 	return t;
 }
 
-float convert_value (float in_value, const char* src, const char* dest) {
+double convert_value (double in_value, const char* src, const char* dest) {
 
 
 	uint64_t mask1 = 0, mask2 = 0;
