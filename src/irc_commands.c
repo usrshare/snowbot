@@ -312,8 +312,6 @@ int load_location (int argc, const char** argv, struct irc_user_params* up, stru
 
     //argv[0] refers to the actual first parameter, not name of command.
 
-    bool parse_ok = false;
-
     if (argc == 0) return 1;
 
     if (argv[0][0] == '#') { //city id
@@ -642,8 +640,41 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 int convert_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     if (argc == 1) {
-	respond(session,nick,channel,"Usage: %s [number] [src measure] [dest measure]"); return 0;
+	ircprintf(session,nick,channel,"Usage: %s [number] [src measure] [dest measure], %s [ft'in] [dest measure]",argv[0],argv[0]); return 0;
     }	
+
+    if (argc == 3) {
+
+	if (strchr(argv[1],'\'')) {
+
+	double ft, in, ftin;
+
+	int r = sscanf(argv[1],"%lf'%lf\"",&ft,&in);
+	
+	if (r != 2) {ircprintf(session,nick,channel,"Couldn't recognize inch value."); return 0;}
+
+	if (ft < 0) in *= -1;
+	ftin = in + (ft * 12);
+	
+	double res = convert_value(ftin, "in", argv[2]);
+
+	if (!isnan(res)) ircprintf(session,nick,channel,"%.0f'%.3f\" = %.3f %s",ft, fabs(in), res, argv[2]);
+	else ircprintf(session,nick,channel,"Error while converting: %s.",conv_strerror[conv_errno]); 
+	} else {
+
+	char* measure = NULL;	    
+	double count = strtod(argv[1],&measure);
+
+	if (*measure == 0) {ircprintf(session,nick,channel,"Invalid measure."); return 0; }
+
+	double res = convert_value(count, measure, argv[2]);
+
+	if (!isnan(res)) ircprintf(session,nick,channel,"%.3f %s = %.3f %s",count, measure, res, argv[2]);
+	else ircprintf(session,nick,channel,"Error while converting: %s.",conv_strerror[conv_errno]); 
+
+	}
+
+    }
 
     if (argc == 4) {
 
@@ -894,7 +925,14 @@ int shorten_url_cb (irc_session_t* session, const char* restrict nick, const cha
 
     int r = search_url((argc >= 2) ? argv[1] : NULL,last_url);
     
-    if (r == 1) { ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n",argv[1]); return 0;}
+    if (r == 1) {
+	
+	if (argv[1]) 
+	    ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n",argv[1]);
+	else
+	    ircprintf(session,nick,channel,"No URLs found in buffer.\n");
+	return 0;}
+
     if (r == 2) { ircprintf(session,nick,channel,"Request \"%s\" matches more than 1 URL. Please use a more specific request.\n",argv[1]); return 0;}
 
     if (strlen(last_url) > 0) {	    

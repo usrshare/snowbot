@@ -263,6 +263,7 @@ bool url_titlable(const char* url) {
     if (strstr(url,"youtu.be/")) return true;
     if (strstr(url,"vimeo.com/")) return true;
     //if (strstr(url,"reddit.com/")) return true;
+    if (strstr(url,"themoscowtimes.com/")) return true;
     if (strstr(url,"redd.it/")) return true;
     //if (strstr(url,"i.imgur.com/")) return false; //prevent i.imgur.com
     //if (strstr(url,"imgur.com/")) return true;
