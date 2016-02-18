@@ -89,6 +89,7 @@ struct convert_rate rates[] = {
 	{CT_VOLUME, "bbl", 158.987294928, 0.0},
 	{CT_SPEED, "m/s", 1.0, 0.0},
 	{CT_SPEED, "km/h", 1/3.6, 0.0},
+	{CT_SPEED, "kmh", 1/3.6, 0.0},
 	{CT_SPEED, "kph", 1/3.6, 0.0},
 	{CT_SPEED, "mph",  0.44704, 0.0},
 	{CT_SPEED, "knot", 0.514444, 0.0},

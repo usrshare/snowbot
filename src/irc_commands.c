@@ -49,6 +49,35 @@ float convert_temp(float temp_k, int wmode) {
     }
 }
 
+void fill_format_temp(float temp_k, char** fmtst, char** fmted) {
+    
+    if (temp_k >= (273.15f + 30.0f)) *fmtst = "\00301,04"; else
+    if (temp_k >= (273.15f + 25.0f)) *fmtst = "\00304"; else
+    if (temp_k >= (273.15f + 20.0f)) *fmtst = "\00307"; else
+    if (temp_k >= (273.15f + 15.0f)) *fmtst = "\00308"; else
+    if (temp_k >= (273.15f + 10.0f)) *fmtst = "\00309"; else
+    if (temp_k >= (273.15f + 5.0f))  *fmtst = "\00311"; else
+    if (temp_k >= (273.15f - 5.0f))  *fmtst = "\00312"; else 
+    if (temp_k >= (273.15f - 15.0f)) *fmtst = "\00302"; else
+    if (temp_k < (273.15f - 15.0f))  *fmtst = "\00301,02";
+
+    *fmted = "\017";
+    return;
+
+};
+void fill_format_wind(float wspd_ms, char** fmtst, char** fmted) {
+    
+    if (wspd_ms >= 30.0f) *fmtst = "\00301,04"; else
+    if (wspd_ms >= 25.0f) *fmtst = "\00304"; else
+    if (wspd_ms >= 20.0f) *fmtst = "\00307"; else
+    if (wspd_ms >= 15.0f) *fmtst = "\00308"; else
+    if (wspd_ms >= 10.0f) *fmtst = "\00309"; else
+    if (wspd_ms >= 5.0f)  *fmtst = "\00311"; else
+
+    *fmted = "\017";
+    return;
+};
+
 int handle_weather_current(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
@@ -72,8 +101,12 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 		snprintf(weathertmp,256,"%s,",wid->description);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
+	
+    char* fmtst = ""; char* fmted = "";
 
-    snprintf (weathertmp,255,"%+.1f%s",convert_temp(wdata->main_temp,up->wmode),wmode_desc(up->wmode));
+    fill_format_temp(wdata->main_temp, &fmtst, &fmted);
+    
+    snprintf (weathertmp,255,"%s%+.1f%s%s",fmtst,convert_temp(wdata->main_temp,up->wmode),wmode_desc(up->wmode),fmted);
 
     weathermsg = strrecat(weathermsg,weathertmp);
 
@@ -99,12 +132,8 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 
 	char* fmtst = ""; char* fmted = "";
 
-	if (wspd >= 30) fmtst = "\026"; else
-	    if (wspd >= 25) fmtst = "\00304"; else
-		if (wspd >= 17) fmtst = "\00308"; else
-		    if (wspd >= 10) fmtst = "\00309";
-
-	if (wspd >= 10) fmted = "\017";
+	fill_format_wind(wspd,&fmtst,&fmted);
+	
 	snprintf(weathertmp,255,", wind: %s%.1f%s m/s (%s%.1f%s mph)", fmtst,wdata->wind_speed,fmted, fmtst,wdata->wind_speed * 2.23694f,fmted);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
@@ -175,13 +204,8 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 	int wspd = (int) round((wdata+i)->wind_speed);
 
 	char* fmtst = ""; char* fmted = "";
+	fill_format_wind(wspd,&fmtst,&fmted);
 
-	if (wspd >= 30) fmtst = "\026"; else
-	    if (wspd >= 25) fmtst = "\00304"; else
-		if (wspd >= 17) fmtst = "\00308"; else
-		    if (wspd >= 10) fmtst = "\00309";
-
-	if (wspd >= 10) fmted = "\017";
 	snprintf(weathertmp,255,"%s%3.0f %s", fmtst,(wdata+i)->wind_speed,fmted);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
@@ -243,8 +267,12 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
     snprintf (weathermsg,128,"%s:",wmode_desc(up->wmode));
 
     memset(weathertmp,0,sizeof weathertmp);
+    char* fmtst = ""; char* fmted = "";
+    
     for (int i=0; i<cnt; i++) {
-	snprintf(weathertmp2,16,"%3d",(int)round(convert_temp((wdata+i)->main_temp,up->wmode)));
+
+    fill_format_temp(wdata[i].main_temp,&fmtst,&fmted);
+	snprintf(weathertmp2,16,"%s%3d%s",fmtst,(int)round(convert_temp((wdata+i)->main_temp,up->wmode)),fmted);
 	strcat(weathertmp,weathertmp2);
     }
     weathermsg = strrecat(weathermsg,weathertmp);
@@ -260,12 +288,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
 	char* fmtst = ""; char* fmted = "";
 
-	if (wspd >= 30) fmtst = "\026"; else
-	    if (wspd >= 25) fmtst = "\00304"; else
-		if (wspd >= 17) fmtst = "\00308"; else
-		    if (wspd >= 10) fmtst = "\00309";
-
-	if (wspd >= 10) fmted = "\017";
+	fill_format_wind(wspd,&fmtst,&fmted);
 
 	snprintf(weathertmp2,16,"%s%3d%s",fmtst,wspd,fmted);
 	strcat(weathertmp,weathertmp2);
@@ -355,65 +378,66 @@ int helpcmd_cb(irc_session_t* session, const char* restrict nick, const char* re
     return 0;
 }
 
-int weather_channel(irc_session_t* session, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
+/*int weather_channel(irc_session_t* session, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
+//
+//    strcpy(wloc->sys_country,"EF");
+//    strcpy(wloc->city_name,channel);
+//    wloc->city_id = -1;
+//    wloc->postcode[0] = 0; //empty the string
+//
+//    time_t t1h = time(NULL)-3600;
+//    time_t t10m = time(NULL)-600;
+//
+//    unsigned int lasthour = watch_getlength(NULL,channel,t1h,0,NULL,NULL);
+//
+//    unsigned int bs1,bs2;
+//
+//    unsigned int snowmsgs = watch_getlength("snow_",channel,t1h,0,NULL,&bs1) + watch_getlength("snow^",channel,t1h,0,NULL,&bs2);
+//    bs1 += bs2;
+//    unsigned int snowmsg2 = watch_getlength("snow_",channel,t10m,0,NULL,NULL) + watch_getlength("snow^",channel,t10m,0,NULL,NULL);
+//
+//    float chantemp = 273.15f - 10.0f + powf((float)lasthour,(1.0f /3.0f));
+//    //assume 30 messages on average. temperatures will range from -5C to whatever.
+//
+//    wdata->main_temp = chantemp;
+//    wdata->main_temp_min = wdata->main_temp_max = chantemp;
+//
+//    float snowpct = lasthour ? ((float)snowmsgs / lasthour): 0.0f;
+//
+//    if (!snowmsg2) snowpct /= 2.0f;
+//
+//    wdata->main_pressure = -1.0f;
+//    wdata->main_humidity = -1.0f;
+//
+//    wdata->weather_c = 1;
+//
+//    if (snowpct >= .40f) wdata->weather_id[0] = 602; else
+//	if (snowpct >= .20f) wdata->weather_id[0] = 601; else
+//	    if (snowpct >= .10f) wdata->weather_id[0] = 600; else
+//		wdata->weather_id[0] = 800;
+//
+//    if (bs1) {
+//	wdata->weather_c = 2;
+//	if (bs1 >= 4) wdata->weather_id[1] = 212; else
+//	    if (bs1 >= 2) wdata->weather_id[1] = 211; else
+//		wdata->weather_id[1] = 210;
+//    }
+//
+//    unsigned int windmsgs = watch_getlength("wind",channel,t1h,0,NULL,NULL);
+//
+//    float windspd = (float)windmsgs / 50.0f;
+//    wdata->wind_speed = windspd;
+//
+//    return 0;
+//}
+ */	
 
-    strcpy(wloc->sys_country,"EF");
-    strcpy(wloc->city_name,channel);
-    wloc->city_id = -1;
-    wloc->postcode[0] = 0; //empty the string
-
-    time_t t1h = time(NULL)-3600;
-    time_t t10m = time(NULL)-600;
-
-    unsigned int lasthour = watch_getlength(NULL,channel,t1h,0,NULL,NULL);
-
-    unsigned int bs1,bs2;
-
-    unsigned int snowmsgs = watch_getlength("snow_",channel,t1h,0,NULL,&bs1) + watch_getlength("snow^",channel,t1h,0,NULL,&bs2);
-    bs1 += bs2;
-    unsigned int snowmsg2 = watch_getlength("snow_",channel,t10m,0,NULL,NULL) + watch_getlength("snow^",channel,t10m,0,NULL,NULL);
-
-    float chantemp = 273.15f - 10.0f + powf((float)lasthour,(1.0f /3.0f));
-    //assume 30 messages on average. temperatures will range from -5C to whatever.
-
-    wdata->main_temp = chantemp;
-    wdata->main_temp_min = wdata->main_temp_max = chantemp;
-
-    float snowpct = lasthour ? ((float)snowmsgs / lasthour): 0.0f;
-
-    if (!snowmsg2) snowpct /= 2.0f;
-
-    wdata->main_pressure = -1.0f;
-    wdata->main_humidity = -1.0f;
-
-    wdata->weather_c = 1;
-
-    if (snowpct >= .40f) wdata->weather_id[0] = 602; else
-	if (snowpct >= .20f) wdata->weather_id[0] = 601; else
-	    if (snowpct >= .10f) wdata->weather_id[0] = 600; else
-		wdata->weather_id[0] = 800;
-
-    if (bs1) {
-	wdata->weather_c = 2;
-	if (bs1 >= 4) wdata->weather_id[1] = 212; else
-	    if (bs1 >= 2) wdata->weather_id[1] = 211; else
-		wdata->weather_id[1] = 210;
-    }
-
-    unsigned int windmsgs = watch_getlength("wind",channel,t1h,0,NULL,NULL);
-
-    float windspd = (float)windmsgs / 50.0f;
-    wdata->wind_speed = windspd;
-
-    return 0;
-}	
-
-int weather_is_channel(const char* restrict arg) {
+/*int weather_is_channel(const char* restrict arg) {
 
     if ((arg[0] == '#') && (strtol(arg+1,NULL,10) == 0)) return 1; 
 
     return 0;
-}
+}*/
 
 int weather_current_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
@@ -431,15 +455,15 @@ int weather_current_cb(irc_session_t* session, const char* restrict nick, const 
     else {
 	int r = load_location(argc-1, argv+1,up,&wloc);
 
-	if ((r) && (argc > 1)) r = !weather_is_channel(argv[1]);
+	//if ((r) && (argc > 1)) r = !weather_is_channel(argv[1]);
 	if (r) r = ((wloc.city_id = up->cityid) == 0);
 	if (r) {respond(session,nick,channel,"Can't understand the parameters. Sorry."); return 0;}
     }
 
-    if ( (argc > 1) && (weather_is_channel(argv[1])) ) 
-	weather_channel(session, argv[0]+5,&wloc,&wdata);
-    else
-	get_current_weather( &wloc, &wdata);
+    //if ( (argc > 1) && (weather_is_channel(argv[1])) ) 
+    //weather_channel(session, argv[0]+5,&wloc,&wdata);
+    //else
+    get_current_weather( &wloc, &wdata);
 
     handle_weather_current(session, nick, channel, &wloc, &wdata);
     return 0;
@@ -647,30 +671,30 @@ int convert_cb (irc_session_t* session, const char* restrict nick, const char* r
 
 	if (strchr(argv[1],'\'')) {
 
-	double ft, in, ftin;
+	    double ft, in, ftin;
 
-	int r = sscanf(argv[1],"%lf'%lf\"",&ft,&in);
-	
-	if (r != 2) {ircprintf(session,nick,channel,"Couldn't recognize inch value."); return 0;}
+	    int r = sscanf(argv[1],"%lf'%lf\"",&ft,&in);
 
-	if (ft < 0) in *= -1;
-	ftin = in + (ft * 12);
-	
-	double res = convert_value(ftin, "in", argv[2]);
+	    if (r != 2) {ircprintf(session,nick,channel,"Couldn't recognize inch value."); return 0;}
 
-	if (!isnan(res)) ircprintf(session,nick,channel,"%.0f'%.3f\" = %.3f %s",ft, fabs(in), res, argv[2]);
-	else ircprintf(session,nick,channel,"Error while converting: %s.",conv_strerror[conv_errno]); 
+	    if (ft < 0) in *= -1;
+	    ftin = in + (ft * 12);
+
+	    double res = convert_value(ftin, "in", argv[2]);
+
+	    if (!isnan(res)) ircprintf(session,nick,channel,"%.0f'%.3f\" = %.3f %s",ft, fabs(in), res, argv[2]);
+	    else ircprintf(session,nick,channel,"Error while converting: %s.",conv_strerror[conv_errno]); 
 	} else {
 
-	char* measure = NULL;	    
-	double count = strtod(argv[1],&measure);
+	    char* measure = NULL;	    
+	    double count = strtod(argv[1],&measure);
 
-	if (*measure == 0) {ircprintf(session,nick,channel,"Invalid measure."); return 0; }
+	    if (*measure == 0) {ircprintf(session,nick,channel,"Invalid measure."); return 0; }
 
-	double res = convert_value(count, measure, argv[2]);
+	    double res = convert_value(count, measure, argv[2]);
 
-	if (!isnan(res)) ircprintf(session,nick,channel,"%.3f %s = %.3f %s",count, measure, res, argv[2]);
-	else ircprintf(session,nick,channel,"Error while converting: %s.",conv_strerror[conv_errno]); 
+	    if (!isnan(res)) ircprintf(session,nick,channel,"%.3f %s = %.3f %s",count, measure, res, argv[2]);
+	    else ircprintf(session,nick,channel,"Error while converting: %s.",conv_strerror[conv_errno]); 
 
 	}
 
@@ -750,10 +774,10 @@ int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const 
 	if (bytes[i] > maxbytes) maxbytes = bytes[i];
 
     for (int i=0; i < intervals; i++)
-	{
-	    int fill = bytes[i] ? ((bytes[i] * 8 / maxbytes) + 1) : 0;
-	    output = strrecat(output,risingvblocks[fill]);
-	}
+    {
+	int fill = bytes[i] ? ((bytes[i] * 8 / maxbytes) + 1) : 0;
+	output = strrecat(output,risingvblocks[fill]);
+    }
 
     output = strrecat(output,"|");
 
@@ -889,7 +913,7 @@ int login_cb (irc_session_t* session, const char* restrict origin, const char* r
 
     char nick[10];
     irc_target_get_nick(origin,nick,10);
-    
+
     if (channel) {
 	ircprintf(session,nick,channel,"\"%s\" is a private-only command. Do not use it in IRC channels.\n"); return 0;}
 
@@ -919,14 +943,68 @@ int login_cb (irc_session_t* session, const char* restrict origin, const char* r
     return 0;
 }
 
+const char* roll_usage = "Usage: %1$s [sides], %1$s [dice]d[sides], %1$s [dice] [sides]";
+
+int roll_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    unsigned int numdice = 1, sides = 6;
+
+    if (argc == 2) {
+
+	if (strchr(argv[1],'d')) {
+
+	    if (argv[1][0] == 'd') {
+
+		if (strlen(argv[1]) == 1) return 1;
+		sides = atoi(argv[1]+1);
+
+	    } else {
+
+		int r = sscanf(argv[1],"%dd%d",&numdice,&sides);
+		if (r == 0) {ircprintf(session,nick,channel,roll_usage,argv[0]); return 1;} }
+	} else sides = atoi(argv[1]);
+
+    } else if (argc == 3) {
+	numdice = atoi(argv[1]);
+	sides = atoi(argv[2]);
+    } else { ircprintf(session,nick,channel,roll_usage,argv[0]); return 1;}
+
+    if ((numdice == 0) || (sides == 0)) { ircprintf(session,nick,channel,roll_usage,argv[0]); return 1;}
+    if ((numdice > 20) || (sides > 100)) { ircprintf(session,nick,channel,"Values too large to parse."); return 1;}
+
+    char res[512]; char restemp[16];
+
+    sprintf(res,"%dd%d = ",numdice,sides); 
+
+    int r_i, r_s=0;
+
+    for (unsigned int i=0; i < numdice; i++) {
+
+	r_i = (rand() % sides) + 1; r_s += r_i;
+
+	sprintf(restemp,"%2d%s", r_i, (i == (numdice-1)) ? "" : "+");
+	strncat(res, restemp, 512 - strlen(res) - 1);
+
+    }
+
+    if (numdice > 1) {    
+	sprintf(restemp," = %d", r_s);
+	strncat(res, restemp, 512 - strlen(res) - 1);
+    }
+
+    ircprintf(session,nick,channel,res);
+    return 0;
+
+}
+
 int shorten_url_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     char last_url[512]; last_url[0] = 0;  
 
     int r = search_url((argc >= 2) ? argv[1] : NULL,last_url);
-    
+
     if (r == 1) {
-	
+
 	if (argv[1]) 
 	    ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n",argv[1]);
 	else
@@ -942,7 +1020,7 @@ int shorten_url_cb (irc_session_t* session, const char* restrict nick, const cha
     }
 
     return 0;
-	
+
 }
 
 struct ison_param {
@@ -975,11 +1053,11 @@ void* ison_thread_func (void* param) {
 }
 
 int ison_test_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
-    
+
     if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <nickname> [nickname] ...",argv[0]); return 0;}
 
     struct ison_param* ip = malloc(sizeof(struct ison_param));
-    
+
     ip->session = session;
     ip->nick = strdup(nick);
     ip->channel = channel ? strdup(channel) : NULL;
@@ -1021,7 +1099,7 @@ struct irc_user_commands cmds[] = {
     {".login",  false, true,  login_cb},
     {".checkl", false, true,  check_login_cb},
     {".cv",	false, false, convert_cb},
-    //{".ison",   false, false, ison_test_cb},
+    {".roll",   false, false, roll_cb},
     {".about",  false, false, NULL},
 };
 
@@ -1040,7 +1118,11 @@ int handle_commands(irc_session_t* session, const char* restrict origin, const c
 	    case '\\':
 		msgparse[o] = msg[i+1]; i+=2; o++; break;
 	    case '"':
-		escaping = !escaping; i++; break;
+		if (strchr(msg+i+1,'"'))
+		{ escaping = !escaping; i++; }
+		else
+		{ msgparse[o] = msg[i]; i++; o++; }
+		break;
 	    case ' ':
 		if (!escaping) {
 		    while (msg[i+1] == ' ') i++; //skip
