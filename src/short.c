@@ -23,9 +23,10 @@ int add_url_to_buf(const char* url) {
 int search_url(const char* restrict pattern, char* o_url) {
 
     int n=0, r=-1;
+	
+    if (urlbuf_last < 0) return 1;
 
     if (pattern == NULL) {
-	if (urlbuf_last < 0) return 1;
 	n = 1; r = urlbuf_last;
     } else {
 

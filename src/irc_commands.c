@@ -144,6 +144,7 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
     }
 
     respond(session,nick,channel,weathermsg);
+    free(weathermsg);
     return 0;
 }
 int handle_long_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct forecast_data* wdata, int cnt) {
@@ -234,7 +235,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 	weathermsg = strrecat(weathermsg,weathertmp);
 	respond(session,nick,channel,weathermsg);
     }
-
+    free(weathermsg);
     return 0;
 }
 int handle_weather_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata, int cnt) {
@@ -1005,7 +1006,7 @@ int shorten_url_cb (irc_session_t* session, const char* restrict nick, const cha
 
     if (r == 1) {
 
-	if (argv[1]) 
+	if (argc >= 2) 
 	    ircprintf(session,nick,channel,"No URL matching \"%s\" found in buffer.\n",argv[1]);
 	else
 	    ircprintf(session,nick,channel,"No URLs found in buffer.\n");
@@ -1118,7 +1119,7 @@ int handle_commands(irc_session_t* session, const char* restrict origin, const c
 	    case '\\':
 		msgparse[o] = msg[i+1]; i+=2; o++; break;
 	    case '"':
-		if (strchr(msg+i+1,'"'))
+		if ((escaping) || (strchr(msg+i+1,'"')))
 		{ escaping = !escaping; i++; }
 		else
 		{ msgparse[o] = msg[i]; i++; o++; }
