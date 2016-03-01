@@ -567,9 +567,14 @@ int connect_bot(void* session, char* address, int port, bool use_ssl, char* nick
     return r;
 }
 
-int disconnect_bot(void* session) {
+int destroy_bot(void* session) {
 
     free(irc_get_ctx(session));
+    return 0;
+}
+
+int disconnect_bot(void* session) {
+
     irc_disconnect(session);
     return 0;
 }

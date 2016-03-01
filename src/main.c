@@ -76,6 +76,7 @@ void inthandler(int sig) {
 
     loop_bot(bothnd);
     
+    disconnect_bot(bothnd);
     }
 
     return 0;
