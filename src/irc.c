@@ -37,6 +37,7 @@ irc_callbacks_t callbacks;
 #define WALL_ENDS 100
 
 int save_initialized = 0;
+int save_atexited = 0;
 
 struct irc_bot_params{
 
@@ -383,7 +384,7 @@ void connect_cb(irc_session_t* session, const char* event, const char* origin, c
     printf("Successfully connected to the network.\n");
 
     watch_load();
-    atexit(watch_save);
+    if (!save_atexited) { atexit(watch_save); save_atexited = 1;}
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
 

@@ -1104,10 +1104,47 @@ struct irc_user_commands cmds[] = {
     {".about",  false, false, NULL},
 };
 
+struct floodwatch {
+    char nick[10];
+    time_t timestamp;
+};
+
+#define HIST_LEN 20
+struct floodwatch lastcmds[HIST_LEN];
+int curcmd = 0; bool hist_empty = true;
+
+void add_history(const char* restrict nick) {
+
+    if (hist_empty) { memset(lastcmds, 0, sizeof lastcmds); hist_empty = false;}
+
+    time_t ct = time(NULL);
+
+    strncpy(lastcmds[curcmd].nick,nick,10);
+    lastcmds[curcmd].timestamp = ct;
+
+    curcmd = (curcmd + 1) % HIST_LEN;
+}
+
+int get_speed(const char* restrict nick, int secs) {
+
+    time_t mint = time(NULL) - secs;
+
+    int n = 0;
+
+    for (int i=0; i < HIST_LEN; i++)
+	if ((lastcmds[i].timestamp >= mint) && (strncmp(nick,lastcmds[i].nick,10) == 0)) n++;
+
+    return n;
+}
+
 int handle_commands(irc_session_t* session, const char* restrict origin, const char* restrict nick,const char* restrict channel, const char* msg) {
 
     char msgparse [(strlen(msg) + 1)];
     memset(msgparse,0,strlen(msg)+1);
+
+    add_history(nick);
+
+    if (get_speed(nick,5) > 5) { printf("I'm so sick of this %s guy!\n",nick); return 0; }
 
     const char* msgv[20]; msgv[0] = msgparse; int msgcur = 0;
 

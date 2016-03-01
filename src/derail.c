@@ -11,7 +11,7 @@ unsigned int dc_count; //number of consecutive messages
 unsigned int dc_length; //length of consecutive messages
 
 int data_loaded = false;
-//int atexit_set = false;
+int atexit_set = false;
 
 #define COUNT_THRESHOLD 5
 #define LENGTH_THRESHOLD 300
@@ -54,7 +54,7 @@ void derail_load(void) {
 	fread(derail[i].text,140,1,df);
     }
 
-    atexit(derail_save);
+    if (!atexit_set) { atexit(derail_save); atexit_set = 1;}
     printf("Derail suggestions loaded.\n");
     fclose(df);
 }
