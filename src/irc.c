@@ -403,9 +403,6 @@ void connect_cb(irc_session_t* session, const char* event, const char* origin, c
 	chantok = strtok_r(NULL,",",&saveptr);
     }
 
-
-    r = hcreate(512);
-    if (r == 0) perror("Can't create user hashtable");
 }
 
 int ison_count = 0;

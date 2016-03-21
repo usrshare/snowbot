@@ -81,6 +81,11 @@ void fill_format_wind(float wspd_ms, char** fmtst, char** fmted) {
 int handle_weather_current(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
+    if (!wloc->city_id) {
+	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+	    return 0;
+    }
+
     char* weathermsg = malloc(128);
 
     char weathertmp[256];
@@ -150,14 +155,21 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 int handle_long_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct forecast_data* wdata, int cnt) {
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+    
+    if (!(wloc[0].city_id)) {
+	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+	    return 0;
+    }
+    
+    while (wdata[cnt-1].temp_day < 1.0) cnt--; //avoid -273
 
     char* weathermsg = malloc(128);
 
-    char weathertmp[256];
+    char weathertmp[512];
 
     snprintf (weathermsg,128,"d#:");
 
-    char weathertmp2[16];
+    char weathertmp2[32];
     memset(weathertmp,0,sizeof weathertmp);
 
     struct tm weathertime;
@@ -241,14 +253,21 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 int handle_weather_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata, int cnt) {
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+    
+    if (!(wloc[0].city_id)) {
+	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+	    return 0;
+    }
+
+    while (wdata[cnt-1].main_temp < 1.0) cnt--; //avoid -273
 
     char* weathermsg = malloc(128);
 
-    char weathertmp[256];
+    char weathertmp[512];
 
     snprintf (weathermsg,128,"hr:");
 
-    char weathertmp2[16];
+    char weathertmp2[32];
     memset(weathertmp,0,sizeof weathertmp);
 
     struct tm weathertime;
@@ -500,7 +519,7 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
 
-	get_weather_forecast( &wloc, wdata, cnt);
+	cnt = get_weather_forecast( &wloc, wdata, cnt);
 	handle_weather_forecast( session, nick, channel, &wloc, wdata, cnt);
 
     }
@@ -526,8 +545,10 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
     if (argc > 1) 
     { cnt = strtol(argv[1],&endcnt,10);
 
-	if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 7; if (cnt>40) cnt=40;
-	if (endcnt == argv[1]) cnt = 7; } else cnt= 7;
+	if (cnt < 0) cnt = 1; 
+	if (endcnt == argv[1]) cnt = 7; }
+	
+    if (cnt == 0) cnt = 7; if (cnt>15) cnt=15;
 
     struct forecast_data wdata[cnt];
     memset(&wdata,0,sizeof (struct forecast_data) *cnt);
@@ -537,7 +558,7 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
 
     if (r) respond(session,nick,channel,"Can't understand the parameters. Sorry."); else {
 
-	get_long_forecast( &wloc, wdata, cnt);
+	cnt = get_long_forecast( &wloc, wdata, cnt);
 	handle_long_forecast( session, nick, channel, &wloc, wdata, cnt);
 
     }
