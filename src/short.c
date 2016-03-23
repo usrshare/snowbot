@@ -13,6 +13,11 @@ int urlbuf_last = -1;
 char urlbuf[URL_CIRCBUF_COUNT][URL_LENGTH];
 
 int add_url_to_buf(const char* url) {
+
+    for (int i=0; i < URL_CIRCBUF_COUNT; i++) {
+	if (strncmp(url,urlbuf[i],URL_LENGTH) == 0) return 0;
+    }
+
     strncpy(urlbuf[urlbuf_cursor],url,URL_LENGTH);
     urlbuf[urlbuf_cursor][URL_LENGTH-1] = 0; //forcibly terminate
     urlbuf_last = urlbuf_cursor;

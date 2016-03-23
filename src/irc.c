@@ -271,32 +271,11 @@ bool url_titlable(const char* url) {
     if (strstr(url,"twitter.com/")) return true;
     return false;
 }
-
-void channel_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
-
+void find_urls(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
+    
     char nick[10];
     irc_target_get_nick(origin,nick,10);
-
-    struct irc_bot_params* ibp = irc_get_ctx(session);
-
-    bool handle_this_message = false;
-    const char* handle_ptr = params[1];
-
-    if (strncmp(params[1],".",1) == 0) handle_this_message = true;
-
-    if (strncmp(params[1],ibp->irc_nickname,strlen(ibp->irc_nickname)) == 0) {
-	handle_this_message = true;
-	handle_ptr = params[1] + strlen(ibp->irc_nickname);
-	while ((strlen(handle_ptr) > 0) && (strchr(",: ",handle_ptr[0])) ) handle_ptr++; //skip delimiters.
-    }
-
-    if (handle_this_message) {
-	handle_msg(session, origin, nick, params[0], handle_ptr);
-    } else {
-
-	if (params[0] != NULL) count_msg(session,nick,params[0],params[1]);
-    }
-
+    
     const char* end = params[1] + strlen(params[1]);
     char* url1 = find_url(params[1],&end);
 
@@ -337,6 +316,34 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
 
 	i++;
 	url1 = find_url(end,&end);
+    }
+}
+
+void channel_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
+
+    char nick[10];
+    irc_target_get_nick(origin,nick,10);
+
+    struct irc_bot_params* ibp = irc_get_ctx(session);
+
+    bool handle_this_message = false;
+    const char* handle_ptr = params[1];
+
+    find_urls(session,event,origin,params,count);
+
+    if (strncmp(params[1],".",1) == 0) handle_this_message = true;
+
+    if (strncmp(params[1],ibp->irc_nickname,strlen(ibp->irc_nickname)) == 0) {
+	handle_this_message = true;
+	handle_ptr = params[1] + strlen(ibp->irc_nickname);
+	while ((strlen(handle_ptr) > 0) && (strchr(",: ",handle_ptr[0])) ) handle_ptr++; //skip delimiters.
+    }
+
+    if (handle_this_message) {
+	handle_msg(session, origin, nick, params[0], handle_ptr);
+    } else {
+
+	if (params[0] != NULL) count_msg(session,nick,params[0],params[1]);
     }
 }
 
