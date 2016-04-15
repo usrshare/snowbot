@@ -669,6 +669,8 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 
 	struct exchange_rate res[2];
 
+	memset(res, 0, 2* sizeof(res[0]));
+
 	strncpy(res[0].symbol,argv[2],4);
 	strncpy(res[1].symbol,argv[3],4);
 

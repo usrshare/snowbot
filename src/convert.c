@@ -41,6 +41,7 @@ struct convert_rate rates[] = {
 	{CT_MASS, "t", 1e6, 0.0}, //metric ton
 	{CT_MASS, "oz", 28.349523, 0.0}, //ounce
 	{CT_MASS, "lb", 453.59237, 0.0}, //pound
+	{CT_MASS, "st", 6.35029318, 0.0}, //stone
 	{CT_MASS, "ton", 907184.74, 0.0}, // short ton
 	{CT_MASS, "lt", 1016046.909, 0.0}, //long ton
 	{CT_MASS, "mp", 2.1765113e-11, 0.0}, //planck mass
