@@ -27,7 +27,6 @@
 #include "paste.h"
 #include "weather.h"
 
-irc_callbacks_t callbacks;
 
 #define ACTIVITY_CIRCBUF_SIZE 20
 
@@ -528,8 +527,6 @@ void* create_bot(char* irc_channel) {
 
     if (!save_initialized) { findsavedir(); save_initialized = 1;}
 
-    memset( &callbacks, 0, sizeof(callbacks));
-
     struct irc_bot_params* new_params = malloc(sizeof(struct irc_bot_params));
     if (!new_params) {
 	perror("Unable to allocate memory for bot structure");
@@ -539,15 +536,12 @@ void* create_bot(char* irc_channel) {
     memset(new_params,0,sizeof(struct irc_bot_params));
 
     new_params->irc_channel = irc_channel;
-
-    callbacks.event_connect = connect_cb;
-    callbacks.event_numeric = numeric_cb;
-    callbacks.event_join = join_cb;
-    callbacks.event_quit = quit_cb;
-    callbacks.event_part = part_cb;
-    callbacks.event_channel = channel_cb;
-    callbacks.event_privmsg = privmsg_cb;
-
+	
+    irc_callbacks_t callbacks = {
+	.event_connect=connect_cb, .event_numeric = numeric_cb,
+	.event_join = join_cb, .event_quit = quit_cb, .event_part = part_cb,
+	.event_channel = channel_cb, .event_privmsg = privmsg_cb }; 
+    
     irc_session_t* session = irc_create_session (&callbacks);
     irc_set_ctx(session,new_params);
 
@@ -556,18 +550,13 @@ void* create_bot(char* irc_channel) {
 
 int connect_bot(void* session, char* address, int port, bool use_ssl, char* nickname, char* password) {
 
+    if (use_ssl) { fprintf(stderr,"Sorry, SSL not supported.\n"); return 1;}
+    
     struct irc_bot_params* ibp = irc_get_ctx(session);
     ibp->irc_nickname = nickname;
 
-    char address_copy[128];
-
-    if (use_ssl) {
-	strcpy(address_copy,"#");
-	strncat(address_copy,address,126);
-    } else strncpy(address_copy,address,127);
-
-    int r = irc_connect(session,address_copy,port,password,nickname,NULL,"snowbot");
-    if (r != 0) fprintf(stderr,"IRC connection error %d.\n",r);
+    int r = irc_connect(session,address,port,password,nickname,NULL,"snowbot");
+    if (r != 0) fprintf(stderr,"IRC connection error %d.\n",r); else printf("Connected to %s.\n",address);
     return r;
 }
 
@@ -595,11 +584,19 @@ int reconnect_bot(void* session) {
     return 0;
 }
 
+int loop_bot2(int session_c, void** session_v) {
+
+    int r = irc_run2(session_c, (irc_session_t**)session_v);
+    if (r != 0) fprintf(stderr,"irc_run2 error %d.\n",r);
+    printf("Terminating.\n");
+    return 0;
+}
+
 int loop_bot(void* session) {
 
     int r = irc_run(session);
     if (r != 0) fprintf(stderr,"irc_run error %d.\n",r);
-    //printf("Terminating.\n");
+    printf("Terminating.\n");
     return 0;
 }
 

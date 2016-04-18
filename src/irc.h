@@ -8,5 +8,6 @@ int connect_bot(void* session, char* address, int port, bool use_ssl, char* nick
 int disconnect_bot(void* session);
 int destroy_bot(void* session);
 int loop_bot(void* session);
+int loop_bot2(int session_c, void** session_v);
 
 #endif

@@ -6,8 +6,8 @@
 struct irc_session_t;
 typedef struct irc_session irc_session_t;
 
-typedef void (*irc_event_cb) (irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count);
-typedef void (*irc_numeric_cb)(irc_session_t* session, unsigned int event, const char* origin, const char** params, unsigned int count);
+typedef void (*irc_event_cb)   (irc_session_t* session, const char* event,  const char* origin, const char** params, unsigned int count);
+typedef void (*irc_numeric_cb) (irc_session_t* session, unsigned int event, const char* origin, const char** params, unsigned int count);
 
 struct irc_callbacks {
 	irc_event_cb event_connect;
@@ -26,6 +26,7 @@ irc_session_t* irc_create_session(irc_callbacks_t* callbacks);
 int irc_connect(irc_session_t* session, const char* restrict address, int port, const char* password, const char* nickname, const char* username, const char* realname);
 
 int irc_run(irc_session_t* session);
+int irc_run2(int session_c, irc_session_t** session_v);
 int irc_disconnect(irc_session_t* session);
 
 int irc_raw_sendf(irc_session_t* session, const char* fmt, ...);
