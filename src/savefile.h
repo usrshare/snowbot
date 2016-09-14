@@ -33,6 +33,7 @@ struct saveparam {
 
 int findsavedir(void); //initialize
 FILE* sfopen(const char* restrict filename, const char* restrict mode);
+void* map_notifylist(size_t* length);
 
 int setparam(void* data, struct saveparam* params, size_t paramcnt, const char* restrict name, const char* restrict value);
 int getparam(void* data, struct saveparam* params, size_t paramcnt, const char* restrict name, char* o_value, size_t o_size);

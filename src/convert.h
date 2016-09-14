@@ -1,7 +1,7 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
-int conv_errno;
+extern int conv_errno;
 
 extern const char* conv_strerror[];
 

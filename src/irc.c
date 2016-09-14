@@ -14,6 +14,9 @@
 #include <stddef.h>
 #include <time.h>
 
+#include "config.h"
+
+#include "boyer-moore.h"
 #include "irc_proto.h"
 
 #include "derail.h"
@@ -27,7 +30,6 @@
 #include "paste.h"
 #include "weather.h"
 
-
 #define ACTIVITY_CIRCBUF_SIZE 20
 
 #define NOTIFY_USERS_MAX 16
@@ -37,6 +39,13 @@
 
 int save_initialized = 0;
 int save_atexited = 0;
+
+#if ENABLE_URL_NOTIFY 
+
+char* notify_url_list = NULL;
+size_t notify_url_len = 0;
+
+#endif
 
 struct irc_bot_params{
 
@@ -87,13 +96,19 @@ char* find_url(const char* restrict msg, const char** msgend) {
 
     char* cchar = proto; 
 
-    while (validchar(*cchar)) cchar++;
+    if (strncmp(cchar,"//",2) == 0) cchar+=2;
+
+    size_t dnsize=0;
+
+    while (validchar(*cchar)) { cchar++; dnsize++; }
 
     if ((proto > msg) && (*(proto-1) == '(') && (*(cchar-1) == ')')) cchar--;
 
+    if (dnsize == 0) {return NULL;}
     if (msgend) *msgend = cchar;
     return proto; 
 }
+
 
 #ifdef __DATE__
 #define COMPILEDATE __DATE__
@@ -133,7 +148,7 @@ int handle_msg(irc_session_t* session, const char* restrict origin, const char* 
 
 	char ctcp[512];
 	decode_ctcp(msg,ctcp);
-	
+
 	return handle_ctcp(session,nick,ctcp);
     }
 
@@ -141,6 +156,9 @@ int handle_msg(irc_session_t* session, const char* restrict origin, const char* 
 	case BM_NONE:
 
 	    switch(msg[0]) {
+		case 'b': {
+			      if (strcmp(msg, "botsnack") == 0) respond(session,nick,channel,"nomnomnom");
+			      break;}
 		case 'k': {
 			      if (strncmp(msg, "kill all humans",15) == 0) respond(session,nick,channel,"kill all humans!!");
 			      break;}
@@ -200,35 +218,35 @@ void count_msg(irc_session_t* session, const char* restrict nick, const char* re
 
 void quit_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-//    char nick[10];
-//    irc_target_get_nick(origin,nick,10);
-//
-//    printf("User %s quit the server.\n",nick);
-//
-//    struct irc_bot_params* ibp = irc_get_ctx(session);
-//    struct irc_user_params* up = get_user_params(nick, EB_NULL);
-//
-//    if (up) {
-//	save_user_params(nick,up);
-//	del_user_params(nick,up);
-//    }
+    //    char nick[10];
+    //    irc_target_get_nick(origin,nick,10);
+    //
+    //    printf("User %s quit the server.\n",nick);
+    //
+    //    struct irc_bot_params* ibp = irc_get_ctx(session);
+    //    struct irc_user_params* up = get_user_params(nick, EB_NULL);
+    //
+    //    if (up) {
+    //	save_user_params(nick,up);
+    //	del_user_params(nick,up);
+    //    }
 
 }
 
 void part_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-//    char nick[10];
-//    irc_target_get_nick(origin,nick,10);
-//
-//    printf("User %s left channel %s.\n",nick,params[0]);
-//	
-//    struct irc_bot_params* ibp = irc_get_ctx(session);
-//    if (ircstrcmp(nick, ibp->msg_current_nickname) != 0) {
-//    
-//    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-//    //up->channel_count--;
-//    
-//    }
+    //    char nick[10];
+    //    irc_target_get_nick(origin,nick,10);
+    //
+    //    printf("User %s left channel %s.\n",nick,params[0]);
+    //	
+    //    struct irc_bot_params* ibp = irc_get_ctx(session);
+    //    if (ircstrcmp(nick, ibp->msg_current_nickname) != 0) {
+    //    
+    //    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+    //    //up->channel_count--;
+    //    
+    //    }
 
 }
 
@@ -245,17 +263,50 @@ void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
 
     if ((title) && (strlen(title) > 0)) {
 
-    size_t strl = strlen(title) + 1;
-    char title_unesc[strl];
+	size_t strl = strlen(title) + 1;
+	char title_unesc[strl];
 
 	html_unescape(title,title_unesc);	
 	ircprintf(ctx->session,NULL,ctx->channel,"Page title: \00310%s\017",title_unesc);
-}
+    }
 
     if (ctx->nick) free(ctx->nick);
     if (ctx->channel) free (ctx->channel);
     if (ctx) free (ctx); 
 }
+
+#if ENABLE_URL_NOTIFY
+
+char* find_domain_name(const char* restrict url, const char** urlend) {
+
+    if (strchr(url,':') == NULL) return NULL;
+
+    char* dstart = strchr(url,':')+1;
+
+    if (strncmp(dstart,"//",2) == 0) dstart +=2; //skip the double slash
+
+    if (strchr(dstart,'@')) dstart = strchr(dstart,'@') + 1; //skip user/pwd
+
+    char* dend = dstart + strlen(dstart);
+
+    if (strchr(dstart,'/')) dend = strchr(dstart,'/');
+
+    if ( strchr(dstart,':') && (strchr(dstart,':') < dend) ) dend = strchr(dstart,':');
+
+    *urlend = dend;
+    return dstart;
+}
+
+bool check_if_in_notify(const char* url) {
+
+    if (!notify_url_list) return false;
+
+    int pos = boyer_moore(notify_url_list, notify_url_len, url, strlen(url)); 
+
+    if (pos) return true;
+    return false;
+}
+#endif
 
 bool url_titlable(const char* url) {
 
@@ -271,10 +322,10 @@ bool url_titlable(const char* url) {
     return false;
 }
 void find_urls(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
-    
+
     char nick[10];
     irc_target_get_nick(origin,nick,10);
-    
+
     const char* end = params[1] + strlen(params[1]);
     char* url1 = find_url(params[1],&end);
 
@@ -283,23 +334,59 @@ void find_urls(irc_session_t* session, const char* event, const char* origin, co
     while (end) {
 
 	size_t ulen = end - url1 + 1;
-	    
+
 	char url[ulen];
 	strncpy(url,url1,ulen);
 	url[ulen-1]=0;
 	printf("Found URL: %s\n",url);
 	add_url_to_buf(url);
 
+#if ENABLE_URL_NOTIFY
+	bool n = check_if_in_notify(url);
+
+	if (n) { ircprintf(session,NULL, params[0], "\00304The URL posted above is reported to be blocked in the Russian Federation.\017"); } else {
+
+	    const char* d_end = url + strlen(url);
+	    char* domain1 = find_domain_name(url,&d_end);
+
+	    if (domain1) {	
+		size_t dlen = d_end - domain1 + 1;
+
+		char domain[dlen];
+
+		strncpy(domain,domain1,dlen);
+		domain[dlen-1]=0;
+		printf("Found domain name: %s\n",domain); 
+
+		bool n = check_if_in_notify(domain);
+
+		if (n) { ircprintf(session,NULL, params[0], "\00304The domain name in the URL posted above is reported to be blocked in the Russian Federation.\017");} else {
+
+		    char ipaddr[64]; //enough for v4 and v6
+
+		    int r = resolve_to_ip(domain,&ipaddr);	
+
+		    printf("Resolved to IP: %s\n",ipaddr);
+
+		    bool n = check_if_in_notify(ipaddr);
+
+		    ircprintf(session,NULL, params[0], "\00308The IP address for the website linked above is reported to be blocked in the Russian Federation.\017");
+
+		}
+	    }
+	}
+#endif
+
 	/*
 	 * functionality disabled at request of Rein@##chat
 
-	if (ulen > 60) {
+	 if (ulen > 60) {
 
-	    char* shurl = irc_shorten(url);
-	    ircprintf(session,NULL,params[0],"Short URL (#%d): \00312%s\017" ,i,shurl);
-	    if (shurl) free(shurl);
-	}
-	*/
+	 char* shurl = irc_shorten(url);
+	 ircprintf(session,NULL,params[0],"Short URL (#%d): \00312%s\017" ,i,shurl);
+	 if (shurl) free(shurl);
+	 }
+	 */
 
 	if ( (strcmp(nick,"Tubbee")) && (url_titlable(url)) ) {
 
@@ -375,7 +462,7 @@ void join_cb(irc_session_t* session, const char* event, const char* origin, cons
 	//Someone else did.
 
 	struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-    
+
 	//fullnick stores the complete nickname of the user.
 	//that includes the hostname.
 	if (strncmp(origin,up->fullnick,129)) up->logged_in = 0;
@@ -419,62 +506,62 @@ pthread_mutex_t ison_condm = PTHREAD_MUTEX_INITIALIZER;
 
 void ison_response_cb(irc_session_t* session, unsigned int event, const char* origin, const char** params, unsigned int count) {
 
-	if ((!ison_count) || (!ison_nicknames) || (!ison_statuses)) return;
+    if ((!ison_count) || (!ison_nicknames) || (!ison_statuses)) return;
 
-	char* saveptr = NULL;
+    char* saveptr = NULL;
 
-	char* curtok = strtok_r(ison_nicknames," ",&saveptr);
-	int i=0;
+    char* curtok = strtok_r(ison_nicknames," ",&saveptr);
+    int i=0;
 
-	while ((curtok) && (i < ison_count)) {
+    while ((curtok) && (i < ison_count)) {
 
-	    if (strstr(params[1],curtok))
-		ison_statuses[i] = true;
+	if (strstr(params[1],curtok))
+	    ison_statuses[i] = true;
 
-	    curtok = strtok_r(NULL," ",&saveptr);
-	    i++;
-	}
+	curtok = strtok_r(NULL," ",&saveptr);
+	i++;
+    }
 
-	pthread_mutex_lock(&ison_condm);
-	ison_count = 0;
-	pthread_cond_signal(&ison_cond);
-	pthread_mutex_unlock(&ison_condm);
-    
-	return;
+    pthread_mutex_lock(&ison_condm);
+    ison_count = 0;
+    pthread_cond_signal(&ison_cond);
+    pthread_mutex_unlock(&ison_condm);
+
+    return;
 }
 
 int ison_request(irc_session_t* session, int count, const char** nicknames, bool* o_statuses) {
 
-	if ((!count) || (!nicknames) || (!o_statuses)) return 1;;
+    if ((!count) || (!nicknames) || (!o_statuses)) return 1;;
 
-	if ((ison_count) || (ison_nicknames) || (ison_statuses)) return 2;
+    if ((ison_count) || (ison_nicknames) || (ison_statuses)) return 2;
 
-	char tempnick[506]; tempnick[0] = 0; int left=506;
+    char tempnick[506]; tempnick[0] = 0; int left=506;
 
-	for (int i=0; i < count; i++) {
-	    strncat(tempnick,nicknames[i],left);
-	    left -= strlen(nicknames[i]);
-	    strncat(tempnick," ",left);
-	    left --;
-	}
+    for (int i=0; i < count; i++) {
+	strncat(tempnick,nicknames[i],left);
+	left -= strlen(nicknames[i]);
+	strncat(tempnick," ",left);
+	left --;
+    }
 
-	if (left < 0) return 3;
+    if (left < 0) return 3;
 
-	pthread_mutex_lock(&ison_condm);
-	
-	ison_count = count;
-	ison_statuses = o_statuses;
-	ison_nicknames = strdup(tempnick);
-	
-	irc_raw_sendf(session, "ISON %s", tempnick);
-	
-	while (ison_count != 0) pthread_cond_wait(&ison_cond,&ison_condm);
-	pthread_mutex_unlock(&ison_condm);
+    pthread_mutex_lock(&ison_condm);
 
-	free(ison_nicknames);
-	ison_nicknames = NULL;
-	ison_statuses = NULL;
-	return 0;
+    ison_count = count;
+    ison_statuses = o_statuses;
+    ison_nicknames = strdup(tempnick);
+
+    irc_raw_sendf(session, "ISON %s", tempnick);
+
+    while (ison_count != 0) pthread_cond_wait(&ison_cond,&ison_condm);
+    pthread_mutex_unlock(&ison_condm);
+
+    free(ison_nicknames);
+    ison_nicknames = NULL;
+    ison_statuses = NULL;
+    return 0;
 }
 
 void numeric_cb(irc_session_t* session, unsigned int event, const char* origin, const char** params, unsigned int count) {
@@ -525,7 +612,12 @@ void numeric_cb(irc_session_t* session, unsigned int event, const char* origin, 
 
 void* create_bot(char* irc_channel) {
 
-    if (!save_initialized) { findsavedir(); save_initialized = 1;}
+    if (!save_initialized) {
+	findsavedir();
+#if ENABLE_URL_NOTIFY
+	notify_url_list = map_notifylist(&notify_url_len);
+#endif
+	save_initialized = 1;}
 
     struct irc_bot_params* new_params = malloc(sizeof(struct irc_bot_params));
     if (!new_params) {
@@ -536,12 +628,12 @@ void* create_bot(char* irc_channel) {
     memset(new_params,0,sizeof(struct irc_bot_params));
 
     new_params->irc_channel = irc_channel;
-	
+
     irc_callbacks_t callbacks = {
 	.event_connect=connect_cb, .event_numeric = numeric_cb,
 	.event_join = join_cb, .event_quit = quit_cb, .event_part = part_cb,
 	.event_channel = channel_cb, .event_privmsg = privmsg_cb }; 
-    
+
     irc_session_t* session = irc_create_session (&callbacks);
     irc_set_ctx(session,new_params);
 
@@ -551,7 +643,7 @@ void* create_bot(char* irc_channel) {
 int connect_bot(void* session, char* address, int port, bool use_ssl, char* nickname, char* password) {
 
     if (use_ssl) { fprintf(stderr,"Sorry, SSL not supported.\n"); return 1;}
-    
+
     struct irc_bot_params* ibp = irc_get_ctx(session);
     ibp->irc_nickname = nickname;
 

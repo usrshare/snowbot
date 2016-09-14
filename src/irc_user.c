@@ -18,6 +18,8 @@ const size_t paramcnt = sizeof(irc_save_params) / sizeof(*irc_save_params);
 
 int save_user_params(const char* restrict nick, struct irc_user_params* up) {
 
+    if (!(up->modified)) return 1; //no need to save
+
     char filename[16];
     snprintf(filename,16,"%.9s.dat",nick);
 
@@ -29,7 +31,9 @@ int load_user_params(const char* restrict nick, struct irc_user_params* up) {
     char filename[16];
     snprintf(filename,16,"%.9s.dat",nick);
 
-    return loaddata(filename,up,irc_save_params,(sizeof(irc_save_params) / sizeof(*irc_save_params)) ); 
+    int r = loaddata(filename,up,irc_save_params,(sizeof(irc_save_params) / sizeof(*irc_save_params)) ); 
+    up->modified = false;
+    return r;
 }
 
 

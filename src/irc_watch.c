@@ -7,6 +7,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "savefile.h"
 const char* bs[] = {
     "breitbart",
     "dailymail",

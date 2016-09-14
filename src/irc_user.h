@@ -1,5 +1,6 @@
 #ifndef IRC_USER_H
 #define IRC_USER_H
+#include <stdbool.h>
 #include <stddef.h>
 #include "savefile.h"
 
@@ -21,6 +22,7 @@ enum weather_modes {
 struct irc_user_params{
     //for hash tables. key is nickname.
     enum bot_modes mode;
+    bool modified; // were the params modified / should they be saved?
 
     enum weather_modes wmode;
     unsigned int cityid;

@@ -6,6 +6,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 char* savedir = NULL;
 
@@ -43,6 +47,32 @@ int findsavedir(void) {
 
 	return 0;
 
+}
+
+const char* notify_fname = "notify_url.txt";
+
+void* map_notifylist(size_t* length) {
+
+
+	size_t l = strlen(savedir) + 1 + strlen(notify_fname) + 1;
+
+	char fullname[l];
+	strcpy(fullname,savedir);
+	strcat(fullname,"/");
+	strcat(fullname,notify_fname);
+
+	int fd = open(fullname, O_RDONLY);
+	if (fd == -1) {
+		printf("Unable to open URL notification file.\n");
+		return NULL;
+	}
+	
+	off_t f_len = lseek(fd,0,SEEK_END) + 1;
+
+	void* res = mmap(NULL, f_len, PROT_READ, MAP_PRIVATE, fd, 0);
+
+	*length = f_len;
+	return res;
 }
 
 FILE* sfopen(const char* restrict filename, const char* restrict mode) {

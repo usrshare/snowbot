@@ -50,31 +50,31 @@ float convert_temp(float temp_k, int wmode) {
 }
 
 void fill_format_temp(float temp_k, char** fmtst, char** fmted) {
-    
+
     if (temp_k >= (273.15f + 30.0f)) *fmtst = "\00301,04"; else
-    if (temp_k >= (273.15f + 25.0f)) *fmtst = "\00304"; else
-    if (temp_k >= (273.15f + 20.0f)) *fmtst = "\00307"; else
-    if (temp_k >= (273.15f + 15.0f)) *fmtst = "\00308"; else
-    if (temp_k >= (273.15f + 10.0f)) *fmtst = "\00309"; else
-    if (temp_k >= (273.15f + 5.0f))  *fmtst = "\00311"; else
-    if (temp_k >= (273.15f - 5.0f))  *fmtst = "\00312"; else 
-    if (temp_k >= (273.15f - 15.0f)) *fmtst = "\00302"; else
-    if (temp_k < (273.15f - 15.0f))  *fmtst = "\00301,02";
+	if (temp_k >= (273.15f + 25.0f)) *fmtst = "\00304"; else
+	    if (temp_k >= (273.15f + 20.0f)) *fmtst = "\00307"; else
+		if (temp_k >= (273.15f + 15.0f)) *fmtst = "\00308"; else
+		    if (temp_k >= (273.15f + 10.0f)) *fmtst = "\00309"; else
+			if (temp_k >= (273.15f + 5.0f))  *fmtst = "\00311"; else
+			    if (temp_k >= (273.15f - 5.0f))  *fmtst = "\00312"; else 
+				if (temp_k >= (273.15f - 15.0f)) *fmtst = "\00302"; else
+				    if (temp_k < (273.15f - 15.0f))  *fmtst = "\00301,02";
 
     *fmted = "\017";
     return;
 
 };
 void fill_format_wind(float wspd_ms, char** fmtst, char** fmted) {
-    
-    if (wspd_ms >= 30.0f) *fmtst = "\00301,04"; else
-    if (wspd_ms >= 25.0f) *fmtst = "\00304"; else
-    if (wspd_ms >= 20.0f) *fmtst = "\00307"; else
-    if (wspd_ms >= 15.0f) *fmtst = "\00308"; else
-    if (wspd_ms >= 10.0f) *fmtst = "\00309"; else
-    if (wspd_ms >= 5.0f)  *fmtst = "\00311"; else
 
-    *fmted = "\017";
+    if (wspd_ms >= 30.0f) *fmtst = "\00301,04"; else
+	if (wspd_ms >= 25.0f) *fmtst = "\00304"; else
+	    if (wspd_ms >= 20.0f) *fmtst = "\00307"; else
+		if (wspd_ms >= 15.0f) *fmtst = "\00308"; else
+		    if (wspd_ms >= 10.0f) *fmtst = "\00309"; else
+			if (wspd_ms >= 5.0f)  *fmtst = "\00311"; else
+
+			    *fmted = "\017";
     return;
 };
 
@@ -83,7 +83,7 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 
     if (!wloc->city_id) {
 	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
-	    return 0;
+	return 0;
     }
 
     char* weathermsg = malloc(128);
@@ -106,11 +106,11 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 		snprintf(weathertmp,256,"%s,",wid->description);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
-	
+
     char* fmtst = ""; char* fmted = "";
 
     fill_format_temp(wdata->main_temp, &fmtst, &fmted);
-    
+
     snprintf (weathertmp,255,"%s%+.1f%s%s",fmtst,convert_temp(wdata->main_temp,up->wmode),wmode_desc(up->wmode),fmted);
 
     weathermsg = strrecat(weathermsg,weathertmp);
@@ -138,7 +138,7 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 	char* fmtst = ""; char* fmted = "";
 
 	fill_format_wind(wspd,&fmtst,&fmted);
-	
+
 	snprintf(weathertmp,255,", wind: %s%.1f%s m/s (%s%.1f%s mph)", fmtst,wdata->wind_speed,fmted, fmtst,wdata->wind_speed * 2.23694f,fmted);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
@@ -155,12 +155,12 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 int handle_long_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct forecast_data* wdata, int cnt) {
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-    
+
     if (!(wloc[0].city_id)) {
 	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
-	    return 0;
+	return 0;
     }
-    
+
     while (wdata[cnt-1].temp_day < 1.0) cnt--; //avoid -273
 
     char* weathermsg = malloc(128);
@@ -253,10 +253,10 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 int handle_weather_forecast(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata, int cnt) {
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-    
+
     if (!(wloc[0].city_id)) {
 	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
-	    return 0;
+	return 0;
     }
 
     while (wdata[cnt-1].main_temp < 1.0) cnt--; //avoid -273
@@ -288,10 +288,10 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
     memset(weathertmp,0,sizeof weathertmp);
     char* fmtst = ""; char* fmted = "";
-    
+
     for (int i=0; i<cnt; i++) {
 
-    fill_format_temp(wdata[i].main_temp,&fmtst,&fmted);
+	fill_format_temp(wdata[i].main_temp,&fmtst,&fmted);
 	snprintf(weathertmp2,16,"%s%3d%s",fmtst,(int)round(convert_temp((wdata+i)->main_temp,up->wmode)),fmted);
 	strcat(weathertmp,weathertmp2);
     }
@@ -454,10 +454,10 @@ int helpcmd_cb(irc_session_t* session, const char* restrict nick, const char* re
 
 /*int weather_is_channel(const char* restrict arg) {
 
-    if ((arg[0] == '#') && (strtol(arg+1,NULL,10) == 0)) return 1; 
+  if ((arg[0] == '#') && (strtol(arg+1,NULL,10) == 0)) return 1; 
 
-    return 0;
-}*/
+  return 0;
+  }*/
 
 int weather_current_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
@@ -547,7 +547,7 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
 
 	if (cnt < 0) cnt = 1; 
 	if (endcnt == argv[1]) cnt = 7; }
-	
+
     if (cnt == 0) cnt = 7; if (cnt>15) cnt=15;
 
     struct forecast_data wdata[cnt];
@@ -599,6 +599,7 @@ int set_cmd_cb (irc_session_t* session, const char* restrict nick, const char* r
     if (argc == 3) {
 
 	int r = setparam(up, irc_save_params, paramcnt, argv[1], argv[2]);
+	up->modified = true;
 	if (r == 0) respond (session,nick,channel,"Parameter set successfully."); else respond (session,nick,channel,"Can't set parameter.");
 
 	//set parameter to value
@@ -626,14 +627,23 @@ int set_cmd_cb (irc_session_t* session, const char* restrict nick, const char* r
     return 0;
 }
 
-
 int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     if (argc == 1) {
-	respond(session,nick,channel,"Usage: .xr [currency list], .xr [number] [src currency] [dest currency]"); return 0;
+	respond(session,nick,channel,"Usage: .xr [currency list], .xr $[dollars] [dest currency], .xr [number] [src currency] [dest currency]"); return 0;
     }	
 
-    if (argc == 2) {
+    if ((argc == 2) && (argv[1][0] == '$')) {
+
+	//dollars to currency
+
+	float srcv = atof(argv[1]);
+
+	const char* srccur = "USD";
+	const char* destcur = argv[2];
+
+
+    } else if (argc == 2) {
 
 	int c = cnt_tokens(argv[1],",");
 
@@ -742,6 +752,7 @@ int weather_celsius_cb (irc_session_t* session, const char* restrict nick, const
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
     respond(session,nick,channel,"Weather responses set to Celsius.");
     up->wmode = WM_CELSIUS;
+    up->modified = true;
     return 0;
 }
 
@@ -749,6 +760,7 @@ int weather_kelvin_cb (irc_session_t* session, const char* restrict nick, const 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
     respond(session,nick,channel,"Weather responses set to Kelvin.");
     up->wmode = WM_KELVIN;
+    up->modified = true;
     return 0;
 }
 
@@ -756,6 +768,7 @@ int weather_fahrenheit_cb (irc_session_t* session, const char* restrict nick, co
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
     respond(session,nick,channel,"Weather responses set to Fahrenheit.");
     up->wmode = WM_FAHRENHEIT;
+    up->modified = true;
     return 0;
 }
 
@@ -847,123 +860,6 @@ int suggest_derail_cb (irc_session_t* session, const char* restrict nick, const 
     else
 	ircprintf(session,nick,channel,"Your suggestion has been added.");
 
-    return 0;
-}
-
-int hash_sha512_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
-
-    if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <\"plaintext\">",argv[0]); return 0;}
-    if (argc > 2) { ircprintf(session,nick,channel,"Please use quotation marks before and after the plaintext."); return 0;}
-
-    char sha512[64];
-
-    hash_pwd(0,NULL,argv[1],sha512);
-
-    char hex[129];
-
-    hash_hex(sha512,64,hex);
-
-    ircprintf(session,nick,channel,hex);
-
-    return 0;
-}
-
-int set_password_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
-
-    if (channel) {
-	ircprintf(session,nick,channel,"\"%s\" is a private-only command. Do not use it in IRC channels.\n"); return 0;}
-
-    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-
-    if (strlen(up->pwdhash)) {
-
-	printf("User %s already has a password.\n",nick);
-
-	if (argc != 3) { ircprintf(session,nick,channel,"Usage: %s <\"old_password\"> <\"new_password\">",argv[0]); return 0;}
-
-	char sha512_o[64];
-	hash_pwd(0,NULL,argv[1],sha512_o);
-	char hex_o[129];
-	hash_hex(sha512_o,64,hex_o);
-
-	int r = strncmp(up->pwdhash,hex_o,129);
-	if (r) {ircprintf(session,nick,channel,"Wrong password."); return 0;}
-
-	char sha512[64];
-	hash_pwd(0,NULL,argv[1],sha512);
-	char hex[129];
-	hash_hex(sha512,64,hex);
-
-	strncpy(up->pwdhash,hex,129);
-	ircprintf(session,nick,channel,"Password set."); 
-
-    } else {
-
-	printf("User %s doesn't have a password.\n",nick);
-
-	if (argc != 2) { ircprintf(session,nick,channel,"Usage: %s <\"new_password\">",argv[0]); return 0;}
-
-	char sha512[64];
-	hash_pwd(0,NULL,argv[1],sha512);
-	char hex[129];
-	hash_hex(sha512,64,hex);
-	strncpy(up->pwdhash,hex,129);
-	ircprintf(session,nick,channel,"Password set."); 
-
-    }
-    return 0;
-}
-
-int check_login_cb (irc_session_t* session, const char* restrict origin, const char* restrict channel, size_t argc, const char** argv) {
-
-    char nick[10];
-    irc_target_get_nick(origin,nick,10);
-
-    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-
-    if (up->logged_in) {
-
-	ircprintf(session,nick,channel,"You're logged in."); 
-
-    } else {
-
-	ircprintf(session,nick,channel,"You're not logged in.");
-	return 0;
-    }
-    return 0;
-}
-
-int login_cb (irc_session_t* session, const char* restrict origin, const char* restrict channel, size_t argc, const char** argv) {
-
-    char nick[10];
-    irc_target_get_nick(origin,nick,10);
-
-    if (channel) {
-	ircprintf(session,nick,channel,"\"%s\" is a private-only command. Do not use it in IRC channels.\n"); return 0;}
-
-    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-
-    if (strlen(up->pwdhash)) {
-
-	if (argc != 2) { ircprintf(session,nick,channel,"Usage: %s <\"password\">",argv[0]); return 0;}
-
-	char sha512_o[64];
-	hash_pwd(0,NULL,argv[1],sha512_o);
-	char hex_o[129];
-	hash_hex(sha512_o,64,hex_o);
-
-	int r = strncmp(up->pwdhash,hex_o,129);
-	if (r) {ircprintf(session,nick,channel,"Wrong password."); return 0;}
-
-	strncpy(up->fullnick,origin,129);
-	up->logged_in = 1;
-	ircprintf(session,nick,channel,"Logged in successfully."); 
-
-    } else {
-
-	ircprintf(session,nick,channel,"First, set your password using the \".setpwd\" command.");
-	return 0;
-    }
     return 0;
 }
 
@@ -1117,13 +1013,9 @@ struct irc_user_commands cmds[] = {
     {".paste",  false, false, start_paste_cb},
     {".rant",   false, false, start_paste_cb},
     {".sug",    false, false, suggest_derail_cb},
-    {".sha512", false, false, hash_sha512_cb},
-    {".setpwd", false, false, set_password_cb},
     {".su",     false, false, shorten_url_cb},
-    {".login",  false, true,  login_cb},
-    {".checkl", false, true,  check_login_cb},
     {".cv",	false, false, convert_cb},
-    {".roll",   false, false, roll_cb},
+//    {".roll",   false, false, roll_cb}, // disabled because InfoAngel@#gi already has .roll
     {".about",  false, false, NULL},
 };
 
@@ -1173,7 +1065,7 @@ int handle_commands(irc_session_t* session, const char* restrict origin, const c
 
     unsigned int i=0,o=0; bool escaping = false;
 
-    while (i < strlen(msg)) {
+    while (i < strlen(msg) && (msgcur < 19) ) {
 	switch (msg[i]) {
 
 	    case '\\':

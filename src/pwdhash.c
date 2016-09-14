@@ -1,8 +1,9 @@
 // vim: cin:sts=4:sw=4 
 #include "pwdhash.h"
-#include <openssl/evp.h>
+//#include <openssl/evp.h>
 #include <string.h>
 
+/*
 int hash_hex(const char* restrict hash, size_t hash_sz, char* hex) {
 
     // hex is assumed to be at least hash_sz*2+1 bytes long.
@@ -39,3 +40,4 @@ int hash_pwd(int alg, const char* restrict salt, const char* restrict pwd, char*
     EVP_cleanup();
     return 0;
 }
+*/

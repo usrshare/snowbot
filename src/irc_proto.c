@@ -261,6 +261,11 @@ int irc_recv(irc_session_t* session) {
 	perror("Error while reading"); return 1;
     }
 
+    if (r == 0) {
+
+	printf("Server disconnected.\n"); return 1;
+    }
+
     (session->msgp) += r;
 
     char* crlf = NULL;
@@ -326,7 +331,9 @@ int irc_run2(int session_c, irc_session_t** session_v) {
 	r = select(fd_max + 1, &rfds, NULL, &xfds, NULL);
 
 	for (int i=0; i < session_c; i++) 
-	    if (FD_ISSET(session_v[i]->sockfd,&rfds)) irc_recv(session_v[i]);
+	    if (FD_ISSET(session_v[i]->sockfd,&rfds)) {
+		if ( irc_recv(session_v[i]) != 0 ) { printf("Connection lost.\n"); exit(0); }
+	    }
 
 	for (int i=0; i < session_c; i++) 
 	    if (FD_ISSET(session_v[i]->sockfd,&xfds)) fprintf(stderr,"Exception %d on session %d, sockfd %d", errno, i, session_v[i]->sockfd);

@@ -249,6 +249,8 @@ int fill_json_wdesc_array(void* out, json_object* fv) {
 
 	int descs = json_object_array_length(fv);
 
+	nw->weather_c = 0;
+
 	for (int i=0; i < descs; i++) {
 
 		struct json_object* afv = json_object_array_get_idx(fv,i);
@@ -265,6 +267,8 @@ int fill_json_fdesc_array(void* out, json_object* fv) {
 	struct forecast_data* nf = out;
 
 	int descs = json_object_array_length(fv);
+	
+	nf->weather_c = 0;
 
 	for (int i=0; i < descs; i++) {
 
@@ -348,7 +352,7 @@ int fill_json_forecast_list_array(struct weather_data* nw, json_object* fv, int 
 
 	int descs = json_object_array_length(fv);
 
-	for (int i=0; i < descs; i++) {
+	for (int i=0; (i<8) && (i < descs); i++) {
 
 		struct json_object* afv = json_object_array_get_idx(fv,i);
 		parse_json_object(afv,nw+i,fill_json_wfore_fields);
@@ -362,7 +366,7 @@ int fill_json_longforecast_list_array(struct forecast_data* nf, json_object* fv,
 
 	int descs = json_object_array_length(fv);
 
-	for (int i=0; i < descs; i++) {
+	for (int i=0; (i<8) && (i < descs); i++) {
 
 		struct json_object* afv = json_object_array_get_idx(fv,i);
 		parse_json_object(afv,nf+i,fill_json_wlfore_fields);
@@ -671,26 +675,6 @@ int strcatunique(char* dest, const char* restrict src) {
 	if (!src) return 0;
 	if (!strstr(dest,src)) { strcat(dest,src); return 0;}
 	return 0;
-}
-
-const char* get_status_string(int w_id) {
-	switch(w_id) {
-		case 210: return "t";
-		case 211: return "T";
-		case 212: return "\00308T\017";
-		case 500: return "r";
-		case 501: return "R";
-		case 502: return "\00308R\017";
-		case 503: return "\00304R\017";
-		case 504: return "\00313R\017";
-		case 600: return "s";
-		case 601: return "S";
-		case 602: return "\00308S\017";
-		case 900: return "@";
-		case 901: return "#";
-		case 902: return "?";
-		default: return NULL;
-	}
 }
 
 int get_short_status (int idc, int* idv, char* o_str){
