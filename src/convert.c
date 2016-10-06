@@ -12,7 +12,8 @@ enum convtype {
 	CT_VOLUME,
 	CT_SPEED,
 	CT_TIME,
-	CT_TEMP
+	CT_TEMP,
+	CT_PRESSURE
 };
 
 struct convert_rate {
@@ -113,7 +114,13 @@ struct convert_rate rates[] = {
 	{CT_TIME, "tp", 5.3910632e-44, 0.0}, //planck time
 	{CT_TEMP, "C", 1.0, 0.0}, //celsius
 	{CT_TEMP, "F", 5/9.0, 32.0}, //fahrenheit
-	{CT_TEMP, "K", 1.0, 273.15}, //kelvin	
+	{CT_TEMP, "K", 1.0, 273.15}, //kelvin
+	{CT_PRESSURE,"Pa",1.0,0.0}, //pascal
+	{CT_PRESSURE,"bar",100000.0,0},
+	{CT_PRESSURE,"mb",100.0,0},
+	{CT_PRESSURE,"mmHg",133.322387415,0.0},//mm of mercury
+	{CT_PRESSURE,"atm",101325.0,0.0}, //atmosphere
+	{CT_PRESSURE,"psi",6894.757,0.0}	
 };
 
 const int rate_c = sizeof(rates) / sizeof(*rates);

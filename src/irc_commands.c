@@ -848,6 +848,11 @@ int charcount_cb (irc_session_t* session, const char* restrict nick, const char*
     return 0;
 }
 
+int say_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    return 0;
+}
+
 int suggest_derail_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <\"suggestion text\">",argv[0]); return 0;}
@@ -1015,7 +1020,8 @@ struct irc_user_commands cmds[] = {
     {".sug",    false, false, suggest_derail_cb},
     {".su",     false, false, shorten_url_cb},
     {".cv",	false, false, convert_cb},
-//    {".roll",   false, false, roll_cb}, // disabled because InfoAngel@#gi already has .roll
+    {".roll2",   false, false, roll_cb}, // disabled because InfoAngel@#gi already has .roll
+    {".say",	false, false, say_cb},
     {".about",  false, false, NULL},
 };
 
