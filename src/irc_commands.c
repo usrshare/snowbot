@@ -948,57 +948,6 @@ int shorten_url_cb (irc_session_t* session, const char* restrict nick, const cha
 
 }
 
-struct ison_param {
-    irc_session_t* session;
-    char* restrict nick;
-    char* restrict channel;
-    int count;
-    const char** nicknames;
-    bool* statuses;
-};
-void* ison_thread_func (void* param) {
-
-    struct ison_param* ctx = param;
-
-    int r = ison_request(ctx->session,ctx->count,ctx->nicknames,ctx->statuses);
-
-    if (r) { ircprintf(ctx->session,ctx->nick,ctx->channel,"Error %d.",r); return 0; }
-
-    for (int i=0; i < ctx->count; i++) {
-	ircprintf(ctx->session,ctx->nick,ctx->channel,"%s is %s.",ctx->nicknames[i],ctx->statuses[i] ? "online" : "offline");
-    }
-
-    free(ctx->nick);
-    if (ctx->channel) free(ctx->channel);
-    for (int i=0; i < ctx->count; i++) free((void*)ctx->nicknames[i]);
-    free(ctx->nicknames);
-    free(ctx->statuses);
-    free(ctx);
-    return NULL;
-}
-
-int ison_test_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
-
-    if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <nickname> [nickname] ...",argv[0]); return 0;}
-
-    struct ison_param* ip = malloc(sizeof(struct ison_param));
-
-    ip->session = session;
-    ip->nick = strdup(nick);
-    ip->channel = channel ? strdup(channel) : NULL;
-    ip->count = argc-1;
-    ip->nicknames = malloc(sizeof(const char*) * ip->count);
-    for (int i=0; i < ip->count; i++) ip->nicknames[i] = strdup(argv[i+1]);
-    ip->statuses = malloc(sizeof(bool) * ip->count);
-    memset(ip->statuses,0,sizeof(bool) * ip->count);
-
-    pthread_t ison_thread;
-
-    pthread_create(&ison_thread,NULL,ison_thread_func,ip);
-
-    return 0;
-}
-
 struct irc_user_commands cmds[] = {
     {".help",   false, false, helpcmd_cb},
     {".load",   false, false, load_cmd_cb},

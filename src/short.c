@@ -57,6 +57,32 @@ struct title_cb {
     void* param;
 };
 
+void irc_imgur_title_cb(const char* data, void* param) {
+
+    if (!data) return;
+
+    struct title_cb* tcb = param;
+
+    char* title1 = strstr(data, "<h1 class=\"post-title \">");
+    char* title2 = strstr(data, "</h1>");
+
+    if ((!title1) || (!title2) || (title2 < title1)) {
+
+	printf("Unable to extract title from page.\n");
+	if (tcb->callback) tcb->callback(tcb->n, tcb->url, NULL, tcb->param);
+	return;
+    }
+
+    char* tbegin = title1 + strlen("<h1 class=\"post-title \">");
+    size_t tlen = title2 - tbegin;
+
+    char* title = strndup(tbegin,tlen);
+
+    if (tcb->callback) tcb->callback(tcb->n, tcb->url, title, tcb->param);
+    free(title);
+    return;
+}
+
 void irc_shorten_and_title_cb(const char* data, void* param) {
 
     if (!data) return;
@@ -86,6 +112,32 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
     return;
 }
 
+void irc_imgur_title(const char* url, url_title_cb callback, void* param) {
+
+    char* urlcpy = strdup(url);
+
+    char* hash = strchr(url,'#');
+    if (hash) *hash = 0;
+
+    char* dot = strrchr(url,'.');
+    if (dot) *dot = 0;
+
+    char* newurl = urlcpy;
+    
+    char* i_imgur = strchr(url,"i.imgur.com");
+    if (i_imgur) newurl = i_imgur + 2;
+
+    struct title_cb* tcb = malloc(sizeof(struct title_cb));
+
+    tcb->url = strdup(newurl);
+    tcb->callback = callback;
+    tcb->param = param;
+
+    make_http_request_cb(newurl,NULL,128*1024,irc_imgur_title_cb,tcb);	
+
+    free(urlcpy);
+}
+
 void irc_shorten_and_title(const char* url, url_title_cb callback, void* param) {
 
     char* urlcpy = strdup(url);
@@ -95,7 +147,7 @@ void irc_shorten_and_title(const char* url, url_title_cb callback, void* param) 
 
     struct title_cb* tcb = malloc(sizeof(struct title_cb));
 
-    tcb->url = strdup(url);
+    tcb->url = strdup(urlcpy);
     tcb->callback = callback;
     tcb->param = param;
 

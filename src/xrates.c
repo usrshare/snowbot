@@ -41,6 +41,13 @@ int fill_json_rates_fields(int o_c, struct exchange_rate* o_v, enum json_type ft
 
     float rate = json_object_get_double(fv);
 
+    if (strcmp(fn,"GBP") == 0) {
+	update_exchange_rate(o_c,o_v,"GBX", rate / 350e6);
+	update_exchange_rate(CACHESZ,cache,"GBX", rate / 350e6);
+	update_exchange_rate(o_c,o_v,"BRX", rate / 350e6);
+	update_exchange_rate(CACHESZ,cache,"BRX", rate / 350e6);
+    }
+
     update_exchange_rate(o_c,o_v,fn,rate);
     update_exchange_rate(CACHESZ,cache,fn,rate);
 
@@ -89,7 +96,7 @@ int parse_json_xrates(json_object* xrates, int o_c, struct exchange_rate* o_v) {
     it_e = json_object_iter_end(xrates);
 
     const char* fn; json_object* fv; enum json_type ft;
-
+	
     while (!json_object_iter_equal(&it_c,&it_e)) {
 
 	fn = json_object_iter_peek_name(&it_c);
