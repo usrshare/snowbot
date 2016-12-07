@@ -316,8 +316,6 @@ bool url_titlable(const char* url) {
     //if (strstr(url,"reddit.com/")) return true;
     if (strstr(url,"themoscowtimes.com/")) return true;
     if (strstr(url,"redd.it/")) return true;
-    //if (strstr(url,"i.imgur.com/")) return false; //prevent i.imgur.com
-    //if (strstr(url,"imgur.com/")) return true;
     if (strstr(url,"twitter.com/")) return true;
     return false;
 }
@@ -398,9 +396,7 @@ void find_urls(irc_session_t* session, const char* event, const char* origin, co
 	    iup->channel = strdup(params[0]);
 
 	    irc_imgur_title(url,irc_url_title_cb,iup); //currently only test
-	}
-
-	if ( (strcmp(nick,"Tubbee")) && (url_titlable(url)) ) {
+	} else if ( (strcmp(nick,"Tubbee")) && (url_titlable(url)) ) {
 
 	    struct irc_url_params* iup = malloc(sizeof(struct irc_url_params));
 	    memset(iup, 0, sizeof(struct irc_url_params));

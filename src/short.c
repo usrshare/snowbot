@@ -124,7 +124,7 @@ void irc_imgur_title(const char* url, url_title_cb callback, void* param) {
 
     char* newurl = urlcpy;
     
-    char* i_imgur = strchr(url,"i.imgur.com");
+    char* i_imgur = strstr(url,"i.imgur.com");
     if (i_imgur) newurl = i_imgur + 2;
 
     struct title_cb* tcb = malloc(sizeof(struct title_cb));
@@ -133,7 +133,7 @@ void irc_imgur_title(const char* url, url_title_cb callback, void* param) {
     tcb->callback = callback;
     tcb->param = param;
 
-    make_http_request_cb(newurl,NULL,128*1024,irc_imgur_title_cb,tcb);	
+    make_http_request_cb(newurl,NULL,8*1024*1024,irc_imgur_title_cb,tcb);	
 
     free(urlcpy);
 }
