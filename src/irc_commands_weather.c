@@ -397,8 +397,17 @@ int load_location (int argc, const char** argv, struct irc_user_params* up, stru
     strncpy(wloc->city_name,argv[0],64);
     escape_location(wloc->city_name);
 
-    if (argc == 2) {
+    if ( (argc == 2) && (strlen(argv[1]) == 2) ) {
 	strncpy(wloc->sys_country,argv[1],2);
+	return 0; 
+    }
+
+    if (argc >= 2) { //very lame hack
+    
+	for (int i=1; i < argc; i++) {
+	strncat(wloc->city_name, " ", 64 - strlen(wloc->city_name));
+	strncat(wloc->city_name, argv[i], 64 - strlen(wloc->city_name));
+	}
     }
 
     return 0;
