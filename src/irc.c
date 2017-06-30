@@ -267,7 +267,7 @@ void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
 	char title_unesc[strl];
 
 	html_unescape(title,title_unesc);	
-	ircprintf(ctx->session,NULL,ctx->channel,"Title: \00310%s\017",title_unesc);
+	ircprintf(ctx->session,NULL,ctx->channel,"Title: \00309%s\017",title_unesc);
     }
 
     if (ctx->nick) free(ctx->nick);
@@ -386,7 +386,7 @@ void find_urls(irc_session_t* session, const char* event, const char* origin, co
 	 }
 	 */
 
-	if (strstr(url,"http://i.imgur.com/") == url) {
+	if ( (strstr(url,"http://i.imgur.com/") == url) || (strstr(url,"http://imgur.com/") == url) )  {
 
 	    struct irc_url_params* iup = malloc(sizeof(struct irc_url_params));
 	    memset(iup, 0, sizeof(struct irc_url_params));

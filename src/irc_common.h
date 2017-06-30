@@ -10,9 +10,10 @@
 char* strrecat(char* orig, const char* append);
 
 int cnt_tokens (const char* restrict string, const char* delim);
-// RFC-accurate string comparison functions.
+// RFC-accurate string comparison and case conversion functions.
 int ircstrcmp(const char* s1, const char* s2);
 int ircstrncmp(const char* s1, const char* s2, size_t N);
+int irctolower(char* s, size_t sz);
 
 int respond(irc_session_t* session, const char* restrict target, const char* restrict channel, const char* restrict msg);
 

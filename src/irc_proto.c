@@ -22,6 +22,14 @@ struct irc_session {
     size_t msglen;
     void* ctx;
     irc_callbacks_t cb;
+
+    //connection params, for reconnect.
+    const char* address;
+    int port;
+    const char* password;
+    const char* nickname;
+    const char* username;
+    const char* realname;
 };
 
 int irc_set_ctx(irc_session_t* session, void* ctx) {
@@ -74,20 +82,22 @@ int irc_connect(irc_session_t* session, const char* restrict address, int port, 
     hai.ai_family = AF_INET;
     hai.ai_socktype = SOCK_STREAM;
     if (getaddrinfo(address, 0, &hai, &ai))
-    { perror("Cannot resolve host."); exit(1); }
+    { perror("Cannot resolve host."); return 1; }
     memcpy(&sin, ai->ai_addr, sizeof sin);
     sin.sin_port = htons(port);
     freeaddrinfo(ai);
     session->sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (session->sockfd<0)
-    { perror("Cannot create socket."); exit(1); }
+    { perror("Cannot create socket."); return 1; }
     if (connect(session->sockfd, (struct sockaddr *)&sin, sizeof sin)<0)
-    { perror("Cannot connect to host."); exit(1); }
+    { perror("Cannot connect to host."); return 1; }
 
     if (password) irc_raw_sendf(session,"PASS %s",nickname);
     irc_raw_sendf(session,"USER %s 0 0 :%s",username ? username : nickname,realname);
     irc_raw_sendf(session,"NICK %s",nickname);
     //irc_raw_sendf(session,"MODE %s +i",nickname);
+    
+    session->address = address; session->port = port; session->password = password; session->nickname = nickname; session->username = username; session->realname = realname;
     return 0;
 }
 
@@ -332,7 +342,7 @@ int irc_run2(int session_c, irc_session_t** session_v) {
 
 	for (int i=0; i < session_c; i++) 
 	    if (FD_ISSET(session_v[i]->sockfd,&rfds)) {
-		if ( irc_recv(session_v[i]) != 0 ) { printf("Connection lost.\n"); exit(0); }
+		if ( irc_recv(session_v[i]) != 0 ) { printf("Connection lost. Reconnecting...\n"); if (irc_connect(session_v[i],session_v[i]->address,session_v[i]->port, session_v[i]->password, session_v[i]->nickname, session_v[i]->username, session_v[i]->realname) != 0) exit(0); }
 	    }
 
 	for (int i=0; i < session_c; i++) 

@@ -22,6 +22,7 @@ int save_user_params(const char* restrict nick, struct irc_user_params* up) {
 
     char filename[16];
     snprintf(filename,16,"%.9s.dat",nick);
+    irctolower(filename,16);
 
     return savedata(filename,up,irc_save_params,(sizeof(irc_save_params) / sizeof(*irc_save_params)) ); 
 }
@@ -30,6 +31,7 @@ int load_user_params(const char* restrict nick, struct irc_user_params* up) {
 
     char filename[16];
     snprintf(filename,16,"%.9s.dat",nick);
+    irctolower(filename,16);
 
     int r = loaddata(filename,up,irc_save_params,(sizeof(irc_save_params) / sizeof(*irc_save_params)) ); 
     up->modified = false;
@@ -43,7 +45,11 @@ struct irc_user_params* get_user_params(const char* restrict nick, enum empty_be
 	atexit(saveall);
     }
 
-    void* p = ht_search(userht,nick);
+    char ircnick[10];
+    strncpy(ircnick,nick,10);
+    irctolower(ircnick,10);
+
+    void* p = ht_search(userht,ircnick);
     if (p) return p;
     if (!add_if_empty) return NULL;
 
@@ -52,7 +58,7 @@ struct irc_user_params* get_user_params(const char* restrict nick, enum empty_be
 
     if (add_if_empty == EB_LOAD) load_user_params(nick,newparams);
 
-    int r = ht_insert(userht,nick,newparams);
+    int r = ht_insert(userht,ircnick,newparams);
 
     return newparams;
 }
@@ -61,12 +67,16 @@ struct irc_user_params* get_user_params(const char* restrict nick, enum empty_be
 int del_user_params(const char* restrict nick, struct irc_user_params* value) {
 
     if (!userht) return 1;
+    
+    char ircnick[10];
+    strncpy(ircnick,nick,10);
+    irctolower(ircnick,10);
 
-    void* p = ht_search(userht,nick);
+    void* p = ht_search(userht,ircnick);
     if (!p) return 1;
 
     free(p);
-    ht_delete(userht,nick);
+    ht_delete(userht,ircnick);
 
     return 0;
 }

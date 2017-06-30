@@ -47,6 +47,16 @@ int cnt_tokens (const char* restrict string, const char* delim) {
     return tokens;
 }
 
+int irctolower(char* s, size_t sz) {
+    char* c = s; size_t i=0;
+    while ((*c != 0) && (i < sz)) {
+
+	if (((*c) >= 'A') && ((*c) <= '^') ) (*c) += 32;
+	c++; i++;
+    }
+    return 0;
+}
+
 int ircstrcmp(const char* s1, const char* s2) {
 
     size_t n=0;

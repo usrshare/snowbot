@@ -119,7 +119,10 @@ void irc_imgur_title(const char* url, url_title_cb callback, void* param) {
     char* hash = strchr(url,'#');
     if (hash) *hash = 0;
 
-    char* dot = strrchr(url,'.');
+    char* slash = strrchr(url,'/');
+    if (!slash) {free(urlcpy); return; }
+
+    char* dot = strrchr(slash,'.');
     if (dot) *dot = 0;
 
     char* newurl = urlcpy;
