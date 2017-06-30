@@ -430,6 +430,7 @@ struct irc_user_commands cmds[] = {
     {".owm",    false, false, weather_current_cb},
     {".owf",    false, false, weather_forecast_cb},
     {".owl",    false, false, weather_longforecast_cb},
+    {".owm_s",  false, false, weather_search_cb},
     {".cc",     false, false, charcount_cb},
     {".ccg",    false, false, charcountgraph_cb},
     {".xr",     false, false, xr_cmd_cb},

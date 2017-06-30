@@ -9,4 +9,6 @@ int weather_current_cb(irc_session_t* session, const char* restrict nick, const 
 int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv);
 int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv);
 
+int weather_search_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv);
+
 #endif //IRC_COMMANDS_WEATHER_H

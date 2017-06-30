@@ -84,4 +84,6 @@ int get_weather_forecast(struct weather_loc* loc, struct weather_data* o_wd, int
 
 int get_long_forecast(struct weather_loc* loc, struct forecast_data* o_fc, int cnt);
 
+int search_weather(struct weather_loc* loc, int count, struct weather_loc* o_loc, struct weather_data* o_wd); 
+
 #endif

@@ -318,6 +318,41 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
     }
     return 0;
 }
+int handle_weather_search(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata, int cnt) {
+
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+
+    if (cnt == 0) {
+	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+	return 0;
+    }
+
+    while (wdata[cnt-1].main_temp < 1.0) cnt--; //avoid -273
+
+    for (int i=0; i < cnt; i++) {
+	
+	char weathertmp[512];
+    
+	char* t_fmtst = ""; char* t_fmted = "";
+	fill_format_temp(wdata[i].main_temp,&t_fmtst,&t_fmted);
+	
+	const struct weather_id* wid = getwid(wdata[i].weather_id[0]);
+
+	snprintf(weathertmp,512,"%d. #%-7d: %s,%s [%.2f°%c, %.2f°%c] / %s%+.1f%s%s, %s%s%s", 
+		i+1, wloc[i].city_id, wloc[i].city_name, wloc[i].sys_country, 
+		fabs(wloc[i].coord_lat), (wloc[i].coord_lat >= 0 ? 'N' : 'S'), //latitude
+		fabs(wloc[i].coord_lon), (wloc[i].coord_lon >= 0 ? 'E' : 'W'), //longitude
+		t_fmtst, convert_temp(wdata[i].main_temp,up->wmode),wmode_desc(up->wmode), t_fmted,
+		wid->format_on ? wid->format_on : "",
+		wid->description,
+		wid->format_off ? wid->format_off : "");
+	
+    
+	respond(session,nick,NULL,weathertmp);
+    }
+
+    return 0;
+}
 
 int escape_location (char* city_name) {
 
@@ -468,5 +503,35 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
 	handle_long_forecast( session, nick, channel, &wloc, wdata, cnt);
 
     }
+    return 0;
+}	
+
+#define MAXSEARCH 10
+
+int weather_search_cb(irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+
+    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
+
+    struct weather_loc wloc;
+    memset(&wloc,0,sizeof wloc); //input location
+    struct weather_loc o_wloc[MAXSEARCH];
+    memset(o_wloc,0,sizeof o_wloc); //output location
+    struct weather_data o_wdata[MAXSEARCH];
+    memset(o_wdata,0,sizeof o_wdata); //output data
+
+    if ((argc == 1) && (!up->cityid)) {
+	respond(session,nick,channel,"Usage: .owm_s <location>");
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
+
+    else {
+	int r = load_location(argc-1, argv+1,up,&wloc);
+
+	if (r) r = ((wloc.city_id = up->cityid) == 0);
+	if (r) {respond(session,nick,channel,"Can't understand the parameters. Sorry."); return 0;}
+    }
+
+    int c = search_weather( &wloc, MAXSEARCH, o_wloc, o_wdata);
+
+    handle_weather_search(session, nick, channel, o_wloc, o_wdata, c);
     return 0;
 }	
