@@ -62,9 +62,9 @@ const struct weather_id wids[] = {
 	{781, "tornado",			" ?"," ?","\026","\017"}, //inv
 	{800, "clear sky",		  	" *"," *","\00308","\017"}, //y
 	{801, "few clouds",			" c"," c",NULL,NULL},
-	{802, "scattered clouds",		" C"," C",NULL,NULL},
-	{803, "broken clouds",			"cc","cc",NULL,NULL},
-	{804, "overcast clouds",		"oc","oc",NULL,NULL},
+	{802, "scattered clouds",		"cc","cc",NULL,NULL},
+	{803, "broken clouds",			" C"," C",NULL,NULL},
+	{804, "overcast clouds",		"CC","CC",NULL,NULL},
 	{900, "tornado",			" ?"," ?","\026","\017"},
 	{901, "tropical storm",			"t#","t#","\026","\017"},
 	{902, "hurricane",			"H@","H@","\026","\017"},
