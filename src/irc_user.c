@@ -11,6 +11,7 @@ struct saveparam irc_save_params[] = {
     {"wmode",ST_UINT32,0,offsetof(struct irc_user_params,wmode),SV_VISIBLE},
     {"cityid",ST_UINT32,0,offsetof(struct irc_user_params,cityid),SV_VISIBLE},
     {"usegraphics",ST_UINT8,0,offsetof(struct irc_user_params,usegraphics),SV_VISIBLE},
+    {"use_dark_colors",ST_UINT8,0,offsetof(struct irc_user_params,use_dark_colors),SV_VISIBLE},
     {"pwdhash",ST_STRING,129,offsetof(struct irc_user_params,pwdhash),SV_HIDDEN}
 };
 

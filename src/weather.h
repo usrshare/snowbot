@@ -6,11 +6,12 @@
 
 struct weather_id {
 	int id;
-	const char* description;
-	const char* symbol;
-	const char* symbol_u;
-	const char* format_on;
-	const char* format_off;
+	const char* description; //textual description
+	const char* symbol; //short 2-char symbol (ASCII only)
+	const char* symbol_u; //short 2-char symbol (Unicode allowed)
+	const char* format_on; //IRC formatting to prepend (bright mode)
+	const char* format_on_d; //IRC formatting to prepend (dark mode)
+	const char* format_off; //IRC formatting to add at the end
 };
 
 extern const struct weather_id wids[];

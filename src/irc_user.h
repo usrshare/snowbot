@@ -27,6 +27,7 @@ struct irc_user_params{
     enum weather_modes wmode;
     unsigned int cityid;
     uint8_t usegraphics;
+    uint8_t use_dark_colors;
 
     unsigned int channel_count;
     uint8_t logged_in;
