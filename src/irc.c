@@ -267,7 +267,7 @@ void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
 	char title_unesc[strl];
 
 	html_unescape(title,title_unesc);	
-	ircprintf(ctx->session,NULL,ctx->channel,"Title: \00309%s\017",title_unesc);
+	ircprintf(ctx->session,NULL,ctx->channel,"Title: \00312%s\017",title_unesc);
     }
 
     if (ctx->nick) free(ctx->nick);
@@ -358,7 +358,7 @@ void find_urls(irc_session_t* session, const char* event, const char* origin, co
 
 		bool n = check_if_in_notify(domain);
 
-		if (n) { ircprintf(session,NULL, params[0], "\00304The domain name in the URL posted above is reported to be blocked in the Russian Federation.\017");} else {
+		if (n) { ircprintf(session,NULL, params[0], "\00307The domain name in the URL posted above is reported to be blocked in the Russian Federation.\017");} else {
 
 		    char ipaddr[64]; //enough for v4 and v6
 
@@ -368,7 +368,7 @@ void find_urls(irc_session_t* session, const char* event, const char* origin, co
 
 		    bool n = check_if_in_notify(ipaddr);
 
-		    ircprintf(session,NULL, params[0], "\00308The IP address for the website linked above is reported to be blocked in the Russian Federation.\017");
+		    ircprintf(session,NULL, params[0], "\00307The IP address for the website linked above is reported to be blocked in the Russian Federation.\017");
 
 		}
 	    }
