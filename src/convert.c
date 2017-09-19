@@ -95,6 +95,7 @@ struct convert_rate rates[] = {
 	{CT_SPEED, "kph", 1/3.6, 0.0},
 	{CT_SPEED, "mph",  0.44704, 0.0},
 	{CT_SPEED, "knot", 0.514444, 0.0},
+	{CT_SPEED, "kt", 0.514444, 0.0},
 	{CT_SPEED, "ft/s", 0.3048, 0.0},
 	{CT_SPEED, "c", 299792458.0, 0.0}, //exactly!
 	{CT_SPEED, "mach", 343.2, 0.0}, //speed of sound

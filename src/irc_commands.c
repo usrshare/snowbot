@@ -140,7 +140,7 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 
 	if (r == 0) {
 	    for (int i=0; i < ci; i++)
-		ircprintf(session,nick,channel,"%s = $%.3f ($1 = %.3f %s)",res[i].symbol,1 / res[i].rate, res[i].rate, res[i].symbol); }
+		ircprintf(session,nick,channel,"%s = $%.2f ($1 = %.2f %s)",res[i].symbol,1 / res[i].rate, res[i].rate, res[i].symbol); }
 	else ircprintf(session,nick,channel,"Error while retrieving exchange rates."); 
     }
 
@@ -158,7 +158,7 @@ int xr_cmd_cb (irc_session_t* session, const char* restrict nick, const char* re
 	int r = get_exchange_rates(2,res);
 
 	if (r == 0) 
-	    ircprintf(session,nick,channel,"%.3f %s = %.3f %s",res[0].symbol,count, res[1].symbol, count * res[1].rate / res[0].rate);
+	    ircprintf(session,nick,channel,"%.2f %s = %.2f %s",res[0].symbol,count, res[1].symbol, count * res[1].rate / res[0].rate);
 	else ircprintf(session,nick,channel,"Error while retrieving exchange rates."); 
     }
 
