@@ -485,7 +485,7 @@ int handle_commands(irc_session_t* session, const char* restrict origin, const c
 
     add_history(nick);
 
-    if (get_speed(nick,5) > 5) { printf("I'm so sick of this %s guy!\n",nick); return 0; }
+    if (get_speed(nick,5) > 5) { printf("I'm so sick of this %s fellow!\n",nick); return 0; }
 
     const char* msgv[20]; msgv[0] = msgparse; int msgcur = 0;
 
