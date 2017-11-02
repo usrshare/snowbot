@@ -198,6 +198,8 @@ int savedata(char* filename, void* data, struct saveparam* params, size_t paramc
 	for (size_t i=0; i < paramcnt; i++) {
 		struct saveparam* curpar = params+i;
 
+		if (curpar->no_save) continue; //skip parameters that shouldn't be saved
+
 		switch(curpar->type) {
 			case ST_STRING:
 				fprintf(sf,"%s=%s\n",curpar->name,(char*)(data + curpar->offset));

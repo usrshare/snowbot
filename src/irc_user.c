@@ -8,11 +8,12 @@
 struct hashtable* userht = NULL;
 
 struct saveparam irc_save_params[] = {
-    {"wmode",ST_UINT32,0,offsetof(struct irc_user_params,wmode),SV_VISIBLE},
-    {"cityid",ST_UINT32,0,offsetof(struct irc_user_params,cityid),SV_VISIBLE},
-    {"usegraphics",ST_UINT8,0,offsetof(struct irc_user_params,usegraphics),SV_VISIBLE},
-    {"use_dark_colors",ST_UINT8,0,offsetof(struct irc_user_params,use_dark_colors),SV_VISIBLE},
-    {"pwdhash",ST_STRING,129,offsetof(struct irc_user_params,pwdhash),SV_HIDDEN}
+    {"wmode",ST_UINT32,0,offsetof(struct irc_user_params,wmode),SV_VISIBLE,false},
+    {"cityid",ST_UINT32,0,offsetof(struct irc_user_params,cityid),SV_VISIBLE,false},
+    {"usegraphics",ST_UINT8,0,offsetof(struct irc_user_params,usegraphics),SV_VISIBLE,false},
+    {"color_scheme",ST_UINT8,0,offsetof(struct irc_user_params,color_scheme),SV_VISIBLE,false},
+    {"use_dark_colors",ST_UINT8,0,offsetof(struct irc_user_params,color_scheme),SV_HIDDEN,false}, //old name for same param
+    {"pwdhash",ST_STRING,129,offsetof(struct irc_user_params,pwdhash),SV_HIDDEN,false}
 };
 
 const size_t paramcnt = sizeof(irc_save_params) / sizeof(*irc_save_params);

@@ -92,9 +92,9 @@ int irc_connect(irc_session_t* session, const char* restrict address, int port, 
     if (connect(session->sockfd, (struct sockaddr *)&sin, sizeof sin)<0)
     { perror("Cannot connect to host."); return 1; }
 
-    if (password) irc_raw_sendf(session,"PASS %s",nickname);
-    irc_raw_sendf(session,"USER %s 0 0 :%s",username ? username : nickname,realname);
+    if (password) irc_raw_sendf(session,"PASS %s",password);
     irc_raw_sendf(session,"NICK %s",nickname);
+    irc_raw_sendf(session,"USER %s 0 0 :%s",username ? username : nickname,realname);
     //irc_raw_sendf(session,"MODE %s +i",nickname);
     
     session->address = address; session->port = port; session->password = password; session->nickname = nickname; session->username = username; session->realname = realname;
@@ -160,7 +160,7 @@ int irc_parse(irc_session_t* session, const char* prefix, int argc, const char**
        for (int i=0; i < argc; i++) 
        printf("(%s) ",argv[i]);
        printf("\n");
-     */
+    */
 
     if ((argc >= 2) && (strcmp(argv[0],"PING") == 0)) {
 	irc_raw_sendf(session,"PONG :%s",argv[1]);

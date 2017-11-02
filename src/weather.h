@@ -11,6 +11,7 @@ struct weather_id {
 	const char* symbol_u; //short 2-char symbol (Unicode allowed)
 	const char* format_on; //IRC formatting to prepend (bright mode)
 	const char* format_on_d; //IRC formatting to prepend (dark mode)
+	const char* format_on_m; //IRC formatting to prepend (monochrome mode)
 	const char* format_off; //IRC formatting to add at the end
 };
 

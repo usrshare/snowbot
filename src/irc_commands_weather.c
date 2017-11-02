@@ -57,6 +57,21 @@ void fill_format_temp_dark (float temp_k, char** fmtst, char** fmted) {
     return;
 };
 
+void fill_format_temp_mono (float temp_k, char** fmtst, char** fmted) {
+
+    *fmted = "\017";
+    if (temp_k >= (273.15f + 30.0f)) { *fmtst = "\026"; return;}
+    if (temp_k >= (273.15f + 25.0f)) { *fmtst = "\002"; return;}
+    if (temp_k >= (273.15f + 20.0f)) { *fmtst = "\002"; return;}
+    if (temp_k >= (273.15f + 15.0f)) { *fmtst = ""; return;}
+    if (temp_k >= (273.15f + 10.0f)) { *fmtst = ""; return;}
+    if (temp_k >= (273.15f + 5.0f))  { *fmtst = ""; return;}
+    if (temp_k >= (273.15f - 5.0f))  { *fmtst = "\002"; return;}
+    if (temp_k >= (273.15f - 15.0f)) { *fmtst = "\002"; return;}
+    if (temp_k < (273.15f - 15.0f))  { *fmtst = "\026"; return;}
+    return;
+};
+
 void fill_format_wind(float wspd_ms, char** fmtst, char** fmted) {
 
     *fmted = "\017";
@@ -83,6 +98,50 @@ void fill_format_wind_dark(float wspd_ms, char** fmtst, char** fmted) {
     return;
 };
 
+void fill_format_wind_mono(float wspd_ms, char** fmtst, char** fmted) {
+
+    *fmted = "\017";
+    if (wspd_ms >= 30.0f) { *fmtst = "\026"; return; }
+    if (wspd_ms >= 25.0f) { *fmtst = "\026"; return; }
+    if (wspd_ms >= 20.0f) { *fmtst = "\002"; return; }
+    if (wspd_ms >= 15.0f) { *fmtst = "\002"; return; }
+    if (wspd_ms >= 10.0f) { *fmtst = ""; return; }
+    if (wspd_ms >= 5.0f)  { *fmtst = ""; return; }
+
+    return;
+};
+
+const char* format_on(const struct weather_id* wid, struct irc_user_params* up) {
+
+    switch(up->color_scheme) {
+	case 0: return wid->format_on;
+	case 1: return wid->format_on_d;
+	case 2: return wid->format_on_m;
+	default: return wid->format_on;
+    }
+    return NULL;
+}
+
+void format_temp(float temp_k, struct irc_user_params* up, char** fmtst, char** fmted) {
+
+    switch(up->color_scheme) {
+	case 0: return fill_format_temp(temp_k,fmtst,fmted);
+	case 1: return fill_format_temp_dark(temp_k,fmtst,fmted);
+	case 2: return fill_format_temp_mono(temp_k,fmtst,fmted);
+	default: return fill_format_temp(temp_k,fmtst,fmted);
+    }
+}
+
+void format_wind(float wspd_ms, struct irc_user_params* up, char** fmtst, char** fmted) {
+
+    switch(up->color_scheme) {
+	case 0: return fill_format_wind(wspd_ms,fmtst,fmted);
+	case 1: return fill_format_wind_dark(wspd_ms,fmtst,fmted);
+	case 2: return fill_format_wind_mono(wspd_ms,fmtst,fmted);
+	default: return fill_format_wind(wspd_ms,fmtst,fmted);
+    }
+}
+
 int handle_weather_current(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
@@ -107,17 +166,14 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
     for (int i=0; i < (wdata->weather_c); i++) {
 	const struct weather_id* wid = getwid(wdata->weather_id[i]);
 	if (wid->format_on)
-	    snprintf(weathertmp,256,"%s%s%s,",up->use_dark_colors ? wid->format_on_d : wid->format_on,wid->description,wid->format_off); else
+	    snprintf(weathertmp,256,"%s%s%s,",format_on(wid,up),wid->description,wid->format_off); else
 		snprintf(weathertmp,256,"%s,",wid->description);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
 
     char* fmtst = ""; char* fmted = "";
 
-    if (up->use_dark_colors)
-	fill_format_temp_dark(wdata->main_temp, &fmtst, &fmted);
-    else
-	fill_format_temp(wdata->main_temp, &fmtst, &fmted);
+    format_temp(wdata->main_temp, up, &fmtst, &fmted);
 
     snprintf (weathertmp,255,"%s%+.1f%s%s",fmtst,convert_temp(wdata->main_temp,up->wmode),wmode_desc(up->wmode),fmted);
 
@@ -145,10 +201,7 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 
 	char* fmtst = ""; char* fmted = "";
 
-	if (up->use_dark_colors)
-	    fill_format_wind_dark(wspd, &fmtst, &fmted);
-	else
-	    fill_format_wind(wspd, &fmtst, &fmted);
+	format_wind(wspd, up, &fmtst, &fmted);
 
 	snprintf(weathertmp,255,", wind: %s%.1f%s m/s (%s%.1f%s mph)", fmtst,wdata->wind_speed,fmted, fmtst,wdata->wind_speed * 2.23694f,fmted);
 	weathermsg = strrecat(weathermsg,weathertmp);
@@ -228,10 +281,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 	int wspd = (int) round((wdata+i)->wind_speed);
 
 	char* fmtst = ""; char* fmted = "";
-	if (up->use_dark_colors)
-	    fill_format_wind_dark(wspd, &fmtst, &fmted);
-	else
-	    fill_format_wind(wspd, &fmtst, &fmted);
+	format_wind(wspd, up, &fmtst, &fmted);
 
 	snprintf(weathertmp,255,"%s%3.0f %s", fmtst,(wdata+i)->wind_speed,fmted);
 	weathermsg = strrecat(weathermsg,weathertmp);
@@ -254,7 +304,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 	    const struct weather_id* wid = getwid((wdata+i)->weather_id[c]);
 
 	    if (wid->format_on)
-		snprintf(weathertmp2,16," %s%s%s ",up->use_dark_colors ? wid->format_on_d : wid->format_on,wid->symbol,wid->format_off); else
+		snprintf(weathertmp2,16," %s%s%s ",format_on(wid,up),wid->symbol,wid->format_off); else
 		    snprintf(weathertmp2,16," %s ",wid->symbol);
 	    strcat(weathertmp,weathertmp2);
 	}
@@ -305,10 +355,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
     for (int i=0; i<cnt; i++) {
 
-    if (up->use_dark_colors)
-	fill_format_temp_dark(wdata[i].main_temp, &fmtst, &fmted);
-    else
-	fill_format_temp(wdata[i].main_temp, &fmtst, &fmted);
+	format_temp(wdata[i].main_temp, up, &fmtst, &fmted);
 	snprintf(weathertmp2,16,"%s%3d%s",fmtst,(int)round(convert_temp((wdata+i)->main_temp,up->wmode)),fmted);
 	strcat(weathertmp,weathertmp2);
     }
@@ -325,10 +372,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
 	char* fmtst = ""; char* fmted = "";
 
-	if (up->use_dark_colors)
-	    fill_format_wind_dark(wspd, &fmtst, &fmted);
-	else
-	    fill_format_wind(wspd, &fmtst, &fmted);
+	format_wind(wspd, up, &fmtst, &fmted);
 
 	snprintf(weathertmp2,16,"%s%3d%s",fmtst,wspd,fmted);
 	strcat(weathertmp,weathertmp2);
@@ -352,7 +396,7 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 	    const struct weather_id* wid = getwid((wdata+i)->weather_id[c]);
 
 	    if (wid->format_on)
-		snprintf(weathertmp2,16," %s%s%s",up->use_dark_colors ? wid->format_on_d : wid->format_on,wid->symbol,wid->format_off); else
+		snprintf(weathertmp2,16," %s%s%s",format_on(wid,up),wid->symbol,wid->format_off); else
 		    snprintf(weathertmp2,16," %s",wid->symbol);
 
 	    strcat(weathertmp,weathertmp2);
@@ -378,10 +422,7 @@ int handle_weather_search(irc_session_t* session, const char* restrict nick, con
 	char weathertmp[512];
 
 	char* t_fmtst = ""; char* t_fmted = "";
-    if (up->use_dark_colors)
-	fill_format_temp_dark(wdata[i].main_temp, &t_fmtst, &t_fmted);
-    else
-	fill_format_temp(wdata[i].main_temp, &t_fmtst, &t_fmted);
+	format_temp(wdata[i].main_temp, up, &t_fmtst, &t_fmted);
 
 	const struct weather_id* wid = getwid(wdata[i].weather_id[0]);
 
@@ -390,7 +431,7 @@ int handle_weather_search(irc_session_t* session, const char* restrict nick, con
 		fabs(wloc[i].coord_lat), (wloc[i].coord_lat >= 0 ? 'N' : 'S'), //latitude
 		fabs(wloc[i].coord_lon), (wloc[i].coord_lon >= 0 ? 'E' : 'W'), //longitude
 		t_fmtst, convert_temp(wdata[i].main_temp,up->wmode),wmode_desc(up->wmode), t_fmted,
-		wid->format_on ? ( up->use_dark_colors ? wid->format_on_d : wid->format_on ) : "",
+		wid->format_on ? ( format_on(wid,up) ) : "",
 		wid->description,
 		wid->format_off ? wid->format_off : "");
 
@@ -505,8 +546,12 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
     if (argc > 1) 
     { cnt = strtol(argv[1],&endcnt,10);
 
-	if (cnt < 0) cnt = 1; if (cnt == 0) cnt = 16; if (cnt>40) cnt=40;
-	if (endcnt == argv[1]) cnt = 16; } else cnt = 16;
+	if (cnt < 0) cnt = 1;
+	if (cnt == 0) cnt = 16;
+	if (cnt>40) cnt=40;
+	if (endcnt == argv[1]) cnt = 16; }
+    
+    else cnt = 16;
 
     struct weather_data wdata[cnt];
     memset(&wdata,0,sizeof (struct weather_data) *cnt);
@@ -545,7 +590,8 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
 	if (cnt < 0) cnt = 1; 
 	if (endcnt == argv[1]) cnt = 7; }
 
-    if (cnt == 0) cnt = 7; if (cnt>15) cnt=15;
+    if (cnt == 0) cnt = 7;
+    if (cnt>15) cnt=15;
 
     struct forecast_data wdata[cnt];
     memset(&wdata,0,sizeof (struct forecast_data) *cnt);

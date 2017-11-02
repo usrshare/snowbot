@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 enum savetypes {
 	ST_STRING,
@@ -29,6 +30,7 @@ struct saveparam {
 	size_t varsize; //for strings
 	ptrdiff_t offset;
 	enum savevis visibility;
+	bool no_save; //do not save, only load. used for bkwds compat
 };
 
 int findsavedir(void); //initialize
