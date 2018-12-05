@@ -92,12 +92,17 @@ char* make_http_request(const char* restrict url, const char* restrict postfield
     struct MemoryStruct chunk;
     memset(&chunk,0,sizeof chunk);
     
-    if (maxdl) chunk.maxsize = maxdl;
+    if (maxdl) { 
+	chunk.maxsize = maxdl;
+	char rangetext[200];
+	sprintf(rangetext,"0-%zu", maxdl-1);
+	curl_easy_setopt(httpreq, CURLOPT_RANGE, rangetext);
+	curl_easy_setopt(httpreq, CURLOPT_MAXFILESIZE, maxdl);
+    }
 
     curl_easy_setopt(httpreq, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(httpreq, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(httpreq, CURLOPT_MAXREDIRS, 4);
-    curl_easy_setopt(httpreq, CURLOPT_MAXFILESIZE, 1024*128);
     curl_easy_setopt(httpreq, CURLOPT_WRITEDATA, (void *)&chunk);
     curl_easy_setopt(httpreq, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 

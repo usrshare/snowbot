@@ -96,7 +96,7 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
 
     if ((!title1) || (!title2) || (title2 < title1)) {
 
-	printf("Unable to extract title from page.\n");
+	printf("Unable to extract title from page at %s.\n",tcb->url);
 	if (tcb->callback) tcb->callback(tcb->n, tcb->url, NULL, tcb->param);
 	return;
     }
@@ -150,11 +150,11 @@ void irc_shorten_and_title(const char* url, url_title_cb callback, void* param) 
 
     struct title_cb* tcb = malloc(sizeof(struct title_cb));
 
-    tcb->url = strdup(urlcpy);
+    tcb->url = urlcpy;
     tcb->callback = callback;
     tcb->param = param;
 
-    make_http_request_cb(urlcpy,NULL,128*1024,irc_shorten_and_title_cb,tcb);	
+    make_http_request_cb(url,NULL,2*1024*1024,irc_shorten_and_title_cb,tcb);	
 
     free(urlcpy);
 }

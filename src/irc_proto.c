@@ -325,11 +325,12 @@ int irc_run2(int session_c, irc_session_t** session_v) {
     int fd_max = 0;
 
     fd_set rfds,xfds;
-    FD_ZERO(&rfds); FD_ZERO(&xfds);
 
-    struct timeval tv = {.tv_sec=10, .tv_usec = 0};
+    //struct timeval tv = {.tv_sec=10, .tv_usec = 0};
 
     do {
+    
+	FD_ZERO(&rfds); FD_ZERO(&xfds);
 
 	for (int i=0; i < session_c; i++) {
 
@@ -339,6 +340,10 @@ int irc_run2(int session_c, irc_session_t** session_v) {
 	}
 
 	r = select(fd_max + 1, &rfds, NULL, &xfds, NULL);
+
+	if (r == -1) {
+	    perror("select"); exit(1);
+	}
 
 	for (int i=0; i < session_c; i++) 
 	    if (FD_ISSET(session_v[i]->sockfd,&rfds)) {

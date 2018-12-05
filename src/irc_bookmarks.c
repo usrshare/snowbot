@@ -7,9 +7,10 @@
 #include <string.h>
 
 #include "irc_common.h"
+#include "config.h"
 
 struct irc_bm {
-    char nickname[10];
+    char nickname[IRC_MAX_NICK_LEN+1];
     char text[256];
     bool bm_private;
 };
@@ -40,7 +41,7 @@ void save_bm() {
 	if (bm_v[i].nickname[0] == 0) continue;
 
 	fwrite(&i,1,sizeof(int),sf);
-	fwrite(bm_v[i].nickname,1,10,sf);
+	fwrite(bm_v[i].nickname,1,IRC_MAX_NICK_LEN+1,sf);
 	fwrite(bm_v[i].text,1,256,sf);
 	fwrite(&bm_v[i].bm_private,1,sizeof(bool),sf);
 
@@ -64,7 +65,7 @@ void load_bm() {
 
     while (!feof(sf)) {
 	fread(&i,1,sizeof(int),sf);
-	fread(bm_v[i].nickname,1,10,sf);
+	fread(bm_v[i].nickname,1,IRC_MAX_NICK_LEN+1,sf);
 	fread(bm_v[i].text,1,256,sf);
 	fread(&bm_v[i].bm_private,1,sizeof(bool),sf);
     }
@@ -97,7 +98,7 @@ int add_bm(const char* restrict nickname, const char* restrict text, bool bm_pri
     if (n >= bm_c)
 	realloc_bm(n+1);
 
-    strncpy(bm_v[n].nickname,nickname,10);
+    strncpy(bm_v[n].nickname,nickname,IRC_MAX_NICK_LEN+1);
     strncpy(bm_v[n].text,text,256);
     bm_v[n].bm_private = bm_private;
 
@@ -110,7 +111,7 @@ int find_bm(int id, const char* restrict nickname, int start_id) {
     if (bm_c >= start_id) return -1;
 
     for (int i=start_id; i < bm_c; i++)
-	if (ircstrncmp(bm_v[id].nickname,nickname,10) == 0) return i;
+	if (ircstrncmp(bm_v[id].nickname,nickname,IRC_MAX_NICK_LEN+1) == 0) return i;
 
     return -1;
 }
@@ -120,7 +121,7 @@ const char* get_bm(int id, const char* restrict nickname) {
     if (!bm_v) return NULL;
     if (bm_c >= id) return NULL;
 
-    if ((bm_v[id].bm_private) && (ircstrncmp(bm_v[id].nickname,nickname,10) != 0)) return NULL;
+    if ((bm_v[id].bm_private) && (ircstrncmp(bm_v[id].nickname,nickname,IRC_MAX_NICK_LEN+1) != 0)) return NULL;
 
     return (bm_v[id].text);
 }
@@ -130,7 +131,7 @@ int del_bm(int id, const char* restrict nickname) {
     if (!bm_v) return 1;
     if (bm_c >= id) return 1;
 
-    if ((ircstrncmp(bm_v[id].nickname,nickname,10) != 0)) return 2;
+    if ((ircstrncmp(bm_v[id].nickname,nickname,IRC_MAX_NICK_LEN+1) != 0)) return 2;
     bm_v[id].nickname[0] = 0;
     return 0;
 }

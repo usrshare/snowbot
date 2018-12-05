@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
+#include "config.h"
 
 struct hashtable* userht = NULL;
 
@@ -47,9 +48,9 @@ struct irc_user_params* get_user_params(const char* restrict nick, enum empty_be
 	atexit(saveall);
     }
 
-    char ircnick[10];
-    strncpy(ircnick,nick,10);
-    irctolower(ircnick,10);
+    char ircnick[IRC_MAX_NICK_LEN+1];
+    strncpy(ircnick,nick,IRC_MAX_NICK_LEN+1);
+    irctolower(ircnick,IRC_MAX_NICK_LEN+1);
 
     void* p = ht_search(userht,ircnick);
     if (p) return p;
@@ -70,9 +71,9 @@ int del_user_params(const char* restrict nick, struct irc_user_params* value) {
 
     if (!userht) return 1;
     
-    char ircnick[10];
-    strncpy(ircnick,nick,10);
-    irctolower(ircnick,10);
+    char ircnick[IRC_MAX_NICK_LEN+1];
+    strncpy(ircnick,nick,IRC_MAX_NICK_LEN+1);
+    irctolower(ircnick,IRC_MAX_NICK_LEN+1);
 
     void* p = ht_search(userht,ircnick);
     if (!p) return 1;

@@ -8,6 +8,7 @@
 #include "irc_common.h"
 #include "irc_user.h"
 #include "irc_watch.h"
+#include "config.h"
 
 #include "irc_commands_weather.h"
 
@@ -446,7 +447,7 @@ struct irc_user_commands cmds[] = {
 };
 
 struct floodwatch {
-    char nick[10];
+    char nick[IRC_MAX_NICK_LEN+1];
     time_t timestamp;
 };
 
@@ -460,7 +461,7 @@ void add_history(const char* restrict nick) {
 
     time_t ct = time(NULL);
 
-    strncpy(lastcmds[curcmd].nick,nick,10);
+    strncpy(lastcmds[curcmd].nick,nick,IRC_MAX_NICK_LEN+1);
     lastcmds[curcmd].timestamp = ct;
 
     curcmd = (curcmd + 1) % HIST_LEN;
@@ -473,7 +474,7 @@ int get_speed(const char* restrict nick, int secs) {
     int n = 0;
 
     for (int i=0; i < HIST_LEN; i++)
-	if ((lastcmds[i].timestamp >= mint) && (strncmp(nick,lastcmds[i].nick,10) == 0)) n++;
+	if ((lastcmds[i].timestamp >= mint) && (strncmp(nick,lastcmds[i].nick,IRC_MAX_NICK_LEN+1) == 0)) n++;
 
     return n;
 }

@@ -534,7 +534,7 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
     memset(&wloc,0,sizeof wloc);
 
     if ((argc == 1) && (!up->cityid)) {
-	respond(session,nick,channel,"Usage: .owf <# of 1-day intervals> <location>");
+	respond(session,nick,channel,"Usage: .owf <# of 3-hour intervals> <location>");
 	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
 
     int cnt = 0;

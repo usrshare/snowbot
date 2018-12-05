@@ -53,7 +53,7 @@ struct irc_bot_params{
     char* irc_nickname;
     bool channel_joined;
 
-    char msg_current_nickname[10]; //nickname of user who posted last message
+    char msg_current_nickname[IRC_MAX_NICK_LEN+1]; //nickname of user who posted last message
     unsigned int cons_count; //number of consecutive messages from that user.
     unsigned int cons_length; //length of consecutive messages from that user.
 
@@ -118,7 +118,7 @@ char* find_url(const char* restrict msg, const char** msgend) {
 
 int handle_ctcp(irc_session_t* session, const char* restrict nick, const char* restrict msg) {
 
-    printf("[CTCP][%10s]:%s\n",nick,msg);
+    printf("[CTCP][%*s]:%s\n",IRC_MAX_NICK_LEN,nick,msg);
 
     if (strcmp(msg,"VERSION") == 0) {
 
@@ -218,35 +218,9 @@ void count_msg(irc_session_t* session, const char* restrict nick, const char* re
 
 void quit_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-    //    char nick[10];
-    //    irc_target_get_nick(origin,nick,10);
-    //
-    //    printf("User %s quit the server.\n",nick);
-    //
-    //    struct irc_bot_params* ibp = irc_get_ctx(session);
-    //    struct irc_user_params* up = get_user_params(nick, EB_NULL);
-    //
-    //    if (up) {
-    //	save_user_params(nick,up);
-    //	del_user_params(nick,up);
-    //    }
-
 }
 
 void part_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
-
-    //    char nick[10];
-    //    irc_target_get_nick(origin,nick,10);
-    //
-    //    printf("User %s left channel %s.\n",nick,params[0]);
-    //	
-    //    struct irc_bot_params* ibp = irc_get_ctx(session);
-    //    if (ircstrcmp(nick, ibp->msg_current_nickname) != 0) {
-    //    
-    //    struct irc_user_params* up = get_user_params(nick, EB_LOAD);
-    //    //up->channel_count--;
-    //    
-    //    }
 
 }
 
@@ -321,8 +295,8 @@ bool url_titlable(const char* url) {
 }
 void find_urls(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-    char nick[10];
-    irc_target_get_nick(origin,nick,10);
+    char nick[IRC_MAX_NICK_LEN+1];
+    irc_target_get_nick(origin,nick,IRC_MAX_NICK_LEN+1);
 
     const char* end = params[1] + strlen(params[1]);
     char* url1 = find_url(params[1],&end);
@@ -415,8 +389,8 @@ void find_urls(irc_session_t* session, const char* event, const char* origin, co
 
 void channel_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-    char nick[10];
-    irc_target_get_nick(origin,nick,10);
+    char nick[IRC_MAX_NICK_LEN+1];
+    irc_target_get_nick(origin,nick,IRC_MAX_NICK_LEN+1);
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
@@ -443,9 +417,9 @@ void channel_cb(irc_session_t* session, const char* event, const char* origin, c
 
 void privmsg_cb(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {
 
-    char nick[10];
+    char nick[IRC_MAX_NICK_LEN+1];
 
-    irc_target_get_nick(origin,nick,10);
+    irc_target_get_nick(origin,nick,IRC_MAX_NICK_LEN+1);
     //printf("[   !!PRIVATE!!] [%10s]:%s\n",nick,params[1]);
 
     handle_msg(session,origin,nick,NULL,params[1]); // handle private message
@@ -456,8 +430,8 @@ void join_cb(irc_session_t* session, const char* event, const char* origin, cons
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
 
-    char nick[10];
-    irc_target_get_nick(origin,nick,10);
+    char nick[IRC_MAX_NICK_LEN+1];
+    irc_target_get_nick(origin,nick,IRC_MAX_NICK_LEN+1);
 
     if (ircstrcmp(nick,ibp->irc_nickname) == 0) {
 

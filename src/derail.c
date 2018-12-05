@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "config.h"
 #include "irc_common.h"
 #include "savefile.h"
 
-char d_nickname[10]; //a separate watch for messages
+char d_nickname[IRC_MAX_NICK_LEN+1]; //a separate watch for messages
 unsigned int dc_count; //number of consecutive messages
 unsigned int dc_length; //length of consecutive messages
 
@@ -22,7 +23,7 @@ int atexit_set = false;
 
 
 struct derail_sug {
-    char nickname[10]; //user who made the suggestion
+    char nickname[IRC_MAX_NICK_LEN+1]; //user who made the suggestion
     char text[140];
 };
 
@@ -36,7 +37,7 @@ void derail_save(void) {
     if (!df) return;
 
     for (int i=0; i < SUG_COUNT; i++) {
-	fwrite(derail[i].nickname,10,1,df);
+	fwrite(derail[i].nickname,IRC_MAX_NICK_LEN+1,1,df);
 	fwrite(derail[i].text,140,1,df);
     }
 
@@ -50,7 +51,7 @@ void derail_load(void) {
     if (!df) return;
 
     for (int i=0; i < SUG_COUNT; i++) {
-	fread(derail[i].nickname,10,1,df);
+	fread(derail[i].nickname,IRC_MAX_NICK_LEN+1,1,df);
 	fread(derail[i].text,140,1,df);
     }
 
@@ -98,7 +99,7 @@ int insert_sug(const char* restrict nickname, const char* restrict text) {
     int r = empty_suggestion();
     if (r == -1) return 1;
 
-    strncpy(derail[r].nickname,nickname,10);
+    strncpy(derail[r].nickname,nickname,IRC_MAX_NICK_LEN+1);
     strncpy(derail[r].text,text,140);
 
     return 0;
@@ -113,10 +114,10 @@ int derail_addmsg(irc_session_t* session,const char* restrict nickname, const ch
 	data_loaded = true;
     }
 
-    if (strncmp(nickname,d_nickname,10) != 0) {
+    if (strncmp(nickname,d_nickname,IRC_MAX_NICK_LEN+1) != 0) {
 	dc_count = 0;
 	dc_length = 0;
-	strncpy(d_nickname,nickname,10);
+	strncpy(d_nickname,nickname,IRC_MAX_NICK_LEN+1);
     }
 
     dc_count++;
@@ -128,7 +129,7 @@ int derail_addmsg(irc_session_t* session,const char* restrict nickname, const ch
 	int sugid = random_suggestion();
 
 	if (sugid != -1) {
-	    ircprintf(session,NULL,channel,"<%.10s> %.140s",derail[sugid].nickname,derail[sugid].text);
+	    ircprintf(session,NULL,channel,"<%.*s> %.140s",IRC_MAX_NICK_LEN+1,derail[sugid].nickname,derail[sugid].text);
 	}
 	derail[sugid].nickname[0] = 0;
 	dc_count = 0;

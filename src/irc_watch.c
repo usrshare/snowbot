@@ -7,6 +7,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "config.h"
 #include "savefile.h"
 const char* bs[] = {
     "breitbart",
@@ -26,7 +27,7 @@ const char* bs[] = {
 };
 
 struct watch_msgs {
-    char nickname[10];
+    char nickname[IRC_MAX_NICK_LEN+1];
     char channel[10]; //for purposes of this thing.
     unsigned int length;
     unsigned int wordcount;
@@ -48,7 +49,7 @@ void watch_save(void) {
 
     for(int i=0; i < WATCHLEN; i++) {
 
-	fwrite(watch[i].nickname,10,1,ws);
+	fwrite(watch[i].nickname,IRC_MAX_NICK_LEN+1,1,ws);
 	fwrite(watch[i].channel,10,1,ws);
 	fwrite(&watch[i].length,sizeof(int),1,ws);
 	fwrite(&watch[i].wordcount,sizeof(int),1,ws);
@@ -69,7 +70,7 @@ void watch_load(void) {
 
     for(int i=0; i < WATCHLEN; i++) {
 
-	fread(watch[i].nickname,10,1,ws);
+	fread(watch[i].nickname,IRC_MAX_NICK_LEN+1,1,ws);
 	fread(watch[i].channel,10,1,ws);
 	fread(&watch[i].length,sizeof(int),1,ws);
 	fread(&watch[i].wordcount,sizeof(int),1,ws);
@@ -84,7 +85,7 @@ void watch_load(void) {
 
 int watch_addmsg(const char* restrict nickname, const char* restrict channel, const char* restrict msg) {
 
-    strncpy(watch[newmsg_i].nickname, nickname,10);
+    strncpy(watch[newmsg_i].nickname, nickname,IRC_MAX_NICK_LEN+1);
     strncpy(watch[newmsg_i].channel, channel,10);
 
     watch[newmsg_i].length = strlen(msg); //replace with UTF-8 based length?
@@ -144,7 +145,7 @@ unsigned int watch_getlength(const char* restrict nickname, const char* restrict
 	if ((time_min) && (watch[i].time < time_min)) continue;
 	if ((time_max) && (watch[i].time > time_max)) continue;
 	if ((channel) && (ircstrncmp(watch[i].channel,channel,10) != 0)) continue;
-	if ((!nickname) || (ircstrncmp(nickname,watch[i].nickname,9) == 0) ) { res += watch[i].length; _wc += watch[i].wordcount; _bs += watch[i].bscount; }
+	if ((!nickname) || (ircstrncmp(nickname,watch[i].nickname,IRC_MAX_NICK_LEN) == 0) ) { res += watch[i].length; _wc += watch[i].wordcount; _bs += watch[i].bscount; }
     }
 
     if (wc) *wc = _wc;
