@@ -305,7 +305,7 @@ int fill_json_weather_fields(void* out, enum json_type ft, const char* fn, json_
 
 	if (s_eq(fn,"id")) { loc->city_id = json_object_get_int(fv); return 0;}
 	if (s_eq(fn,"name")) { strncpy(loc->city_name,json_object_get_string(fv),32); return 0;}
-	if (s_eq(fn,"cod")) { return 0; } //ignore
+	if (s_eq(fn,"cod")) { nw->cod = json_object_get_int(fv); return 0; } 
 	if (s_eq(fn,"base")) { return 0; } //ignore
 
 	return 1;
@@ -325,7 +325,7 @@ int fill_json_wfore_fields(void* out, enum json_type ft, const char* fn, json_ob
 	if (s_eq(fn,"weather")) { fill_json_wdesc_array(nw,fv); return 0;}
 	if (s_eq(fn,"sys")) { return 0;}
 
-	if (s_eq(fn,"cod")) { return 0; } //ignore
+	if (s_eq(fn,"cod")) { nw->cod = json_object_get_int(fv); return 0; } 
 	if (s_eq(fn,"base")) { return 0; } //ignore
 
 	return 1;
@@ -347,7 +347,7 @@ int fill_json_wlfore_fields(void* out, enum json_type ft, const char* fn, json_o
 	if (s_eq(fn,"snow")) { nf->snow = json_object_get_double(fv); if (errno) nf->snow = -1.0; return 0;}
 	if (s_eq(fn,"humidity")) { nf->humidity = json_object_get_int(fv); return 0;}
 
-	if (s_eq(fn,"cod")) { return 0; } //ignore
+	if (s_eq(fn,"cod")) { nf->cod = json_object_get_int(fv); return 0; } 
 	if (s_eq(fn,"base")) { return 0; } //ignore
 
 	return 1;
@@ -410,7 +410,13 @@ int fill_json_forecast_fields(struct weather_data* nw, struct weather_loc* loc, 
 
 	if (s_eq(fn,"list")) { fill_json_forecast_list_array(nw,fv,*cnt); return 0;}
 
-	if (s_eq(fn,"cod")) { return 0; } //ignore
+	if (s_eq(fn,"cod")) { 
+		
+		int cod = json_object_get_int(fv); 
+		for (int i=0; i < *cnt; i++) nw[i].cod = cod;
+		
+		return 0; }
+
 	if (s_eq(fn,"message")) { return 0; } //ignore
 
 	return 1;
@@ -427,7 +433,12 @@ int fill_json_longforecast_fields(struct forecast_data* nf, struct weather_loc* 
 
 	if (s_eq(fn,"list")) { fill_json_longforecast_list_array(nf,fv,*cnt); return 0;}
 
-	if (s_eq(fn,"cod")) { return 0; } //ignore
+	if (s_eq(fn,"cod")) { 
+		
+		int cod = json_object_get_int(fv); 
+		for (int i=0; i < *cnt; i++) nf[i].cod = cod;
+		
+		return 0; }
 	if (s_eq(fn,"message")) { return 0; } //ignore
 
 	return 1;

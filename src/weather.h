@@ -20,7 +20,8 @@ extern const struct weather_id wids[];
 const struct weather_id* getwid(int id);
 
 struct weather_data {
-	
+
+	int cod;
 	int weather_id[8];
 	int weather_c;
 
@@ -43,6 +44,7 @@ struct weather_data {
 
 struct forecast_data {
 
+	int cod;
 	time_t dt;
 	float temp_day;
 	float temp_min;

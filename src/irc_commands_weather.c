@@ -145,8 +145,10 @@ void format_wind(float wspd_ms, struct irc_user_params* up, char** fmtst, char**
 int handle_weather_current(irc_session_t* session, const char* restrict nick, const char* restrict channel, struct weather_loc* wloc, struct weather_data* wdata) {
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
-    if (!wloc->city_id) {
-	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+    if (wdata->cod != 200) {
+	char errormsg[256];
+	snprintf(errormsg,256,"Sorry, but OWM returned no results for your location. (Error %d)", wdata->cod);
+	respond(session,nick,channel,errormsg);
 	return 0;
     }
 
@@ -154,12 +156,16 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 
     char weathertmp[256];
 
-    snprintf (weathermsg,1024,"weather in %s (#%d)",wloc->city_name,wloc->city_id);
-
-    if (strlen(wloc->sys_country) == 2) {
-	snprintf (weathertmp,256,",%2s",wloc->sys_country);
-	weathermsg = strrecat(weathermsg,weathertmp);
+    if (wloc->city_id) {
+	snprintf (weathermsg,1024,"weather in %s (#%d)",wloc->city_name,wloc->city_id);
+	if (strlen(wloc->sys_country) == 2) {
+	    snprintf (weathertmp,256,",%2s",wloc->sys_country);
+	    weathermsg = strrecat(weathermsg,weathertmp);
+	}
+    } else {
+	snprintf (weathermsg,1024,"weather in your location");
     }
+
 
     weathermsg = strrecat(weathermsg,": ");
 
@@ -220,10 +226,17 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
-    if (!(wloc[0].city_id)) {
-	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+    if (wdata[0].cod != 200) {
+	char errormsg[256];
+	snprintf(errormsg,256,"Sorry, but OWM returned no results for your location. (Error %d)", wdata->cod);
+	respond(session,nick,channel,errormsg);
 	return 0;
     }
+
+    //if (!(wloc[0].city_id)) {
+    //	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+    //	return 0;
+    //    }
 
     while (wdata[cnt-1].temp_day < 1.0) cnt--; //avoid -273
 
@@ -318,8 +331,10 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
     struct irc_user_params* up = get_user_params(nick, EB_LOAD);
 
-    if (!(wloc[0].city_id)) {
-	respond(session,nick,channel,"Sorry, but OWM returned no results for your location.");
+    if (wdata[0].cod != 200) {
+	char errormsg[256];
+	snprintf(errormsg,256,"Sorry, but OWM returned no results for your location. (Error %d)", wdata->cod);
+	respond(session,nick,channel,errormsg);
 	return 0;
     }
 
@@ -550,7 +565,7 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
 	if (cnt == 0) cnt = 16;
 	if (cnt>40) cnt=40;
 	if (endcnt == argv[1]) cnt = 16; }
-    
+
     else cnt = 16;
 
     struct weather_data wdata[cnt];
