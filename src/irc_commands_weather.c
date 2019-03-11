@@ -527,7 +527,7 @@ int weather_current_cb(irc_session_t* session, const char* restrict nick, const 
 
     if ((argc == 1) && (!up->cityid)) {
 	respond(session,nick,channel,"Usage: .owm <location>");
-	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude> <latitude>"); return 0; }
 
     else {
 	int r = load_location(argc-1, argv+1,up,&wloc);
@@ -550,7 +550,7 @@ int weather_forecast_cb(irc_session_t* session, const char* restrict nick, const
 
     if ((argc == 1) && (!up->cityid)) {
 	respond(session,nick,channel,"Usage: .owf <# of 3-hour intervals> <location>");
-	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude> <latitude>"); return 0; }
 
     int cnt = 0;
 
@@ -591,7 +591,7 @@ int weather_longforecast_cb(irc_session_t* session, const char* restrict nick, c
 
     if ((argc == 1) && (!up->cityid)) {
 	respond(session,nick,channel,"Usage: .owl <# of 1-day intervals> <location>");
-	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude> <latitude>"); return 0; }
 
     int cnt = 0;
 
@@ -638,7 +638,7 @@ int weather_search_cb(irc_session_t* session, const char* restrict nick, const c
 
     if ((argc == 1) && (!up->cityid)) {
 	respond(session,nick,channel,"Usage: .owm_s <location>");
-	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude>,<latitude>"); return 0; }
+	respond(session,nick,channel,"Location is one of:  #<OWM city ID>, @<zip code>[ <2char country code>], \"<city name>\"[ <2char country code>], <longitude> <latitude>"); return 0; }
 
     else {
 	int r = load_location(argc-1, argv+1,up,&wloc);
