@@ -1,6 +1,7 @@
 // vim: cin:sts=4:sw=4 
 #include "irc_common.h"
 
+#include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
@@ -84,6 +85,25 @@ int ircstrncmp(const char* s1, const char* s2, size_t N) {
 
 }
 
+int respond_br(irc_session_t* session, const char* restrict target, const char* restrict channel, const char* restrict msg) {
+    //same as respond, but checks for line breaks.
+    
+    char* msg_br = strdup(msg);
+    
+    char* saveptr;
+
+    char* token = strtok_r(msg_br,"\n\r",&saveptr);
+
+    while (token) {
+	int r = respond(session,target,channel,token);
+	if (r != 0) { free(msg_br); return r; }
+	token = strtok_r(NULL,"\n\r",&saveptr);
+    }
+
+    free(msg_br);
+    return 0;
+}
+
 int respond(irc_session_t* session, const char* restrict target, const char* restrict channel, const char* restrict msg) {
 
     if (!channel) {
@@ -104,11 +124,12 @@ int ircvprintf (irc_session_t* session, const char* restrict target, const char*
     if (r > 1024) {
 
 	char* outtext = malloc(r + 64);
-	r = vsnprintf(res,r+64,format,vargs);
-	r = respond(session,target,channel,outtext);
+	r = vsnprintf(outtext,r+64,format,vargs);
+
+	r = respond_br(session,target,channel,outtext);
 	free(outtext);
     } else {
-	r = respond(session,target,channel,res);
+	r = respond_br(session,target,channel,res);
     }
 
     return r; 

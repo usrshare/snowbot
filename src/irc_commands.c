@@ -297,6 +297,12 @@ int charcountgraph_cb (irc_session_t* session, const char* restrict nick, const 
     return 0;
 }
 
+int owo_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
+    
+    respond(session,nick,channel,"What's that?");
+    return 0;
+}
+
 int charcount_cb (irc_session_t* session, const char* restrict nick, const char* restrict channel, size_t argc, const char** argv) {
 
     if (argc == 1) { ircprintf(session,nick,channel,"Usage: %s <nickname> [seconds]",argv[0]); return 0;}
@@ -431,6 +437,7 @@ struct irc_user_commands cmds[] = {
     {".owm",    false, false, weather_current_cb},
     {".owf",    false, false, weather_forecast_cb},
     {".owl",    false, false, weather_longforecast_cb},
+    {".owo",    false, false, owo_cb},
     {".owm_s",  false, false, weather_search_cb},
     {".cc",     false, false, charcount_cb},
     {".ccg",    false, false, charcountgraph_cb},
