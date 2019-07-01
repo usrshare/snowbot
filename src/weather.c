@@ -194,6 +194,7 @@ int fill_json_city_fields(void* out, enum json_type ft, const char* fn, json_obj
 	if (fv == NULL) return 1;
 	struct weather_loc* loc = out;
 
+	if (s_eq(fn,"timezone")) { loc->timezone = json_object_get_int(fv); return 0;}
 	if (s_eq(fn,"country")) { strncpy(loc->sys_country,json_object_get_string(fv),2); return 0;}
 	if (s_eq(fn,"id")) { loc->city_id = json_object_get_int(fv); return 0;}
 	if (s_eq(fn,"name")) { strncpy(loc->city_name,json_object_get_string(fv),32); return 0;}
@@ -746,7 +747,7 @@ int get_weather_forecast(struct weather_loc* loc, struct weather_data* o_wd, int
 
 	char* response = make_http_request(fullurl,NULL,0);
 
-	//printf("Response: %s\n", response);
+	printf("Response: %s\n", response);
 
 	parse_forecast_response(response,o_wd,loc,cnt);
 	return cnt; //returns the count of responses received.

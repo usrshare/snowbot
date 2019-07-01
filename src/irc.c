@@ -230,18 +230,62 @@ struct irc_url_params {
     char* channel;
 };
 
+static const char title_linesep[] = "\00310 | \00312";
+static const char title_linebrk[] = "\00304...";
+
 void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
 
     struct irc_url_params* ctx = param;
-
 
     if ((title) && (strlen(title) > 0)) {
 
 	size_t strl = strlen(title) + 1;
 	char title_unesc[strl];
 
-	html_unescape(title,title_unesc);	
-	ircprintf(ctx->session,NULL,ctx->channel,"Title: \00312%s\017",title_unesc);
+	html_unescape(title,title_unesc);
+
+	char* saveptr;
+	char* curtok = strtok_r(title_unesc,"\n\r", &saveptr);
+
+	char out_title[416];
+	strcpy(out_title, "Title: \00312");
+
+	size_t left = 416 - strlen(out_title) - 1;
+
+	strncat(out_title, curtok, left); left -= strlen(curtok);
+
+	while (curtok != NULL) {
+	    
+	    curtok = strtok_r(NULL,"\n\r",&saveptr);
+	
+	    if (curtok) {
+		printf("%d %s\n",left,curtok);
+
+	    if (left > (strlen(title_linesep) + strlen(curtok) + strlen(title_linebrk)) ) {
+	    strncat(out_title, title_linesep, left); left -= strlen(title_linesep);
+	    strncat(out_title, curtok, left); left -= strlen(curtok);
+	    } else if (left > strlen(title_linebrk)) {
+		strncat(out_title, title_linebrk, left); left -= strlen(title_linebrk);
+		break;
+	    }
+
+	    }
+
+	}
+		
+	printf("> %s\n",out_title);
+	respond(ctx->session,NULL,ctx->channel,out_title);
+
+	//old version
+	/*ircprintf(ctx->session,NULL,ctx->channel,"Title: \00312%s\017",curtok);
+	
+	while (curtok != NULL) {
+	    curtok = strtok_r(NULL,"\n\r",&saveptr);
+	
+	    if (curtok) 
+		ircprintf(ctx->session,NULL,ctx->channel,"     > \00312%s\017",curtok);
+	}*/
+
     }
 
     if (ctx->nick) free(ctx->nick);
@@ -622,15 +666,18 @@ void* create_bot(char* irc_channel) {
     return session;
 }
 
-int connect_bot(void* session, char* address, int port, bool use_ssl, char* nickname, char* password) {
+int connect_bot(void* session, char* addresses, bool use_ssl, char* nickname, char* password) {
 
     if (use_ssl) { fprintf(stderr,"Sorry, SSL not supported.\n"); return 1;}
 
     struct irc_bot_params* ibp = irc_get_ctx(session);
     ibp->irc_nickname = nickname;
 
-    int r = irc_connect(session,address,port,password,nickname,NULL,"snowbot");
-    if (r != 0) fprintf(stderr,"IRC connection error %d.\n",r); else printf("Connected to %s.\n",address);
+    int r = irc_set_addresses(session,addresses);
+    if (r != 0) { fprintf(stderr,"Unable to set server addresses.\n"); return 1; }
+
+    r = irc_connect(session,password,nickname,NULL,"snowbot");
+    if (r != 0) fprintf(stderr,"IRC connection error %d.\n",r); else printf("Connected.\n");
     return r;
 }
 

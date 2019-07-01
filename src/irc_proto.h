@@ -22,8 +22,8 @@ struct irc_callbacks {
 typedef struct irc_callbacks irc_callbacks_t;
 
 irc_session_t* irc_create_session(irc_callbacks_t* callbacks);
-
-int irc_connect(irc_session_t* session, const char* restrict address, int port, const char* password, const char* nickname, const char* username, const char* realname);
+int irc_set_addresses(irc_session_t* session, const char* restrict addresses);
+int irc_connect(irc_session_t* session, const char* password, const char* nickname, const char* username, const char* realname);
 
 int irc_run(irc_session_t* session);
 int irc_run2(int session_c, irc_session_t** session_v);

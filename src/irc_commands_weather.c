@@ -354,7 +354,9 @@ int handle_weather_forecast(irc_session_t* session, const char* restrict nick, c
 
     for (int i=0; i<cnt; i++) {
 
-	gmtime_r(&((wdata+i)->dt), &weathertime);
+	time_t x = wdata[i].dt + wloc->timezone;
+
+	gmtime_r(&x, &weathertime);
 	snprintf(weathertmp2,16,"%3d",weathertime.tm_hour);
 	strcat(weathertmp,weathertmp2);
     }

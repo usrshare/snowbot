@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #include <sys/select.h>
 #include <sys/types.h>
@@ -24,8 +25,11 @@ struct irc_session {
     irc_callbacks_t cb;
 
     //connection params, for reconnect.
-    const char* address;
-    int port;
+    
+    const char* addresses;
+    int addr_count;
+    int addr_current_index;
+
     const char* password;
     const char* nickname;
     const char* username;
@@ -61,7 +65,7 @@ int irc_raw_sendf(irc_session_t* session, const char* fmt, ...) {
     int n=vsnprintf(sendbuf, 510, fmt, vl);
     va_end(vl);
 
-    if (n > 510) return 1;
+    if (n > 510) { fprintf(stderr,"Message wasn't sent due to overly long contents.\n"); return 1; }
 
     //printf("> %.512s\n",sendbuf);
 
@@ -74,10 +78,80 @@ int irc_raw_sendf(irc_session_t* session, const char* fmt, ...) {
     if (r == n+2) return 0; else return -1;
 }
 
-int irc_connect(irc_session_t* session, const char* restrict address, int port, const char* password, const char* nickname, const char* username, const char* realname) {
+int irc_set_addresses(irc_session_t* session, const char* restrict addresses) {
+    
+    if (strlen(addresses) == 0) { fprintf(stderr,"Empty IRC server address list specified.\n"); return 1; }
+
+    session->addresses = addresses;
+
+    char* addrcopy = strdup(addresses);
+
+    char* saveptr;
+    char* addr_i = strtok_r(addrcopy, ",", &saveptr);
+
+    session->addr_count = 0;
+
+    while (addr_i) {
+
+	session->addr_count++;
+	addr_i = strtok_r(NULL, ",", &saveptr);
+    }
+
+    free(addrcopy);
+
+    return 0;
+}
+
+int irc_get_address(irc_session_t* session, int index, char* o_address, size_t o_addr_size, uint16_t* o_port) {
+
+    char* addrcopy = strdup(session->addresses);
+
+    char* saveptr;
+    char* addr_i = strtok_r(addrcopy, ",", &saveptr);
+
+    int cur_index = 0;
+
+    while (addr_i) {
+
+	if (index == cur_index) {
+
+	    char* saveptr2;
+	    char* addr1 = strtok_r(addr_i, ":", &saveptr2);
+	    char* portstr = strtok_r(NULL, ":", &saveptr2);
+
+	    strncpy(o_address,addr1,o_addr_size);
+	    
+	    if (portstr) { 
+		uint16_t port = (uint16_t)atoi(portstr);
+		*o_port = port;
+	    }
+
+	    free(addrcopy);
+	    return 0;
+	}
+
+	cur_index++;
+	addr_i = strtok_r(NULL, ",", &saveptr);
+    }
+
+    free(addrcopy);
+
+    return 1;
+
+}
+
+int irc_connect(irc_session_t* session, const char* password, const char* nickname, const char* username, const char* realname) {
 
     struct sockaddr_in sin;
     struct addrinfo *ai, hai = { 0 };
+
+    //get an address:port from the session list
+
+    char address[256]; uint16_t port = 0;
+    irc_get_address(session,session->addr_current_index,address,256,&port);
+    if (port == 0) port = 6667; //default IRC port
+	
+    printf("Connecting to %s:%" PRIu16 " as %s...\n", address, port, nickname);
 
     hai.ai_family = AF_INET;
     hai.ai_socktype = SOCK_STREAM;
@@ -97,7 +171,7 @@ int irc_connect(irc_session_t* session, const char* restrict address, int port, 
     irc_raw_sendf(session,"USER %s 0 0 :%s",username ? username : nickname,realname);
     //irc_raw_sendf(session,"MODE %s +i",nickname);
     
-    session->address = address; session->port = port; session->password = password; session->nickname = nickname; session->username = username; session->realname = realname;
+    /*session->address = address; session->port = port;*/ session->password = password; session->nickname = nickname; session->username = username; session->realname = realname;
     return 0;
 }
 
@@ -347,7 +421,10 @@ int irc_run2(int session_c, irc_session_t** session_v) {
 
 	for (int i=0; i < session_c; i++) 
 	    if (FD_ISSET(session_v[i]->sockfd,&rfds)) {
-		if ( irc_recv(session_v[i]) != 0 ) { printf("Connection lost. Reconnecting...\n"); if (irc_connect(session_v[i],session_v[i]->address,session_v[i]->port, session_v[i]->password, session_v[i]->nickname, session_v[i]->username, session_v[i]->realname) != 0) exit(0); }
+		if ( irc_recv(session_v[i]) != 0 ) { 
+		    printf("Connection lost. Connecting to the next server...\n");
+		    session_v[i]->addr_current_index = ((session_v[i]->addr_current_index + 1) % (session_v[i]->addr_count));
+		    if (irc_connect(session_v[i],session_v[i]->password, session_v[i]->nickname, session_v[i]->username, session_v[i]->realname) != 0) exit(0); }
 	    }
 
 	for (int i=0; i < session_c; i++) 

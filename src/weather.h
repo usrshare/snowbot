@@ -76,6 +76,7 @@ struct weather_loc {
 	int city_id;
 	char city_name[64];
 	bool accurate;
+	int timezone;
 };
 
 int get_current_weather( struct weather_loc* params, struct weather_data* o_response);

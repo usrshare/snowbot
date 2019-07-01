@@ -16,8 +16,10 @@ void print_usage(void) {
 
 struct irc_conn_params {
 
-    char* server_addr; // IP address or hostname of the IRC server
-    unsigned int server_port; // port of the IRC server
+    char* server_addrs; // IP:port of the IRC server, separated by commas
+
+    //char* server_addr; // IP address or hostname of the IRC server
+    //unsigned int server_port; // port of the IRC server
     char* server_tag; // tag, used locally to identify networks
     char* server_password; // IP address or hostname of the IRC server
     char* bot_channels; // list of channels to join upon connecting
@@ -49,12 +51,12 @@ int parse_arguments(int argc, char** argv, struct irc_conn_params* o_params) {
 	*slash = 0; //now the string ends on the server/port;
 
 	// is there a port specified?
-	char* colon = strchr(at+1, ':');
-	o_params[i].server_port = ( colon ? atoi(colon+1) : 6667); 
-	if (colon) *colon = 0;
+	//char* colon = strchr(at+1, ':');
+	//o_params[i].server_port = ( colon ? atoi(colon+1) : 6667); 
+	//if (colon) *colon = 0;
 
 	// now the string ends at the server name.
-	o_params[i].server_addr = at+1;
+	o_params[i].server_addrs = at+1;
 	*at = 0;
 
 	// now it only has the tag/nick/pwd part.
@@ -64,7 +66,6 @@ int parse_arguments(int argc, char** argv, struct irc_conn_params* o_params) {
 	char* equals = strchr(argv[i], '=');
 
 	if (equals) {
-	    int tagl = (equals - argv[i]);
 	    o_params[i].server_tag = argv[i];
 	    *equals = 0;
 	    o_params[i].bot_nickname = equals+1;
@@ -72,7 +73,7 @@ int parse_arguments(int argc, char** argv, struct irc_conn_params* o_params) {
 	    o_params[i].bot_nickname = argv[i];
 	}
 
-	printf("%s # %s @ %s : %u / %s\n",o_params[i].server_tag,o_params[i].bot_nickname,o_params[i].server_addr,o_params[i].server_port,o_params[i].bot_channels);
+	printf("%s # %s @ %s / %s\n",o_params[i].server_tag,o_params[i].bot_nickname,o_params[i].server_addrs,o_params[i].bot_channels);
 
     }
 
@@ -87,7 +88,7 @@ int main(int argc, char** argv) {
 
     if (argc <= 1) {
 
-	fprintf(stderr, "Usage: %s [tag=]nickname[:password]@server[:port]/#channel[,#channel2,...]\n", argv[0]);
+	fprintf(stderr, "Usage: %s [tag=]nickname[:password]@server[:port][,server[:port]...]/#channel[,#channel2,...]\n", argv[0]);
 
 	return 1; }
 
@@ -109,8 +110,7 @@ int main(int argc, char** argv) {
     
 	bothnd[i] = create_bot(cp[i].bot_channels);
 	if (!bothnd[i]) { fprintf(stderr,"Unable to create a bot.\n"); return 1;}
-	printf("Connecting to %s, port %d, channel %s as %s...\n",cp[i].server_addr,cp[i].server_port,cp[i].bot_channels,cp[i].bot_nickname);
-	connect_bot(bothnd[i],cp[i].server_addr,cp[i].server_port,0,cp[i].bot_nickname,cp[i].server_password);
+	connect_bot(bothnd[i],cp[i].server_addrs,0,cp[i].bot_nickname,cp[i].server_password);
     }
 
 
