@@ -136,7 +136,7 @@ void irc_imgur_title(const char* url, url_title_cb callback, void* param) {
     tcb->callback = callback;
     tcb->param = param;
 
-    make_http_request_cb(newurl,NULL,8*1024*1024,irc_imgur_title_cb,tcb);	
+    make_http_request_cb(newurl,NULL,NULL,8*1024*1024,irc_imgur_title_cb,tcb);	
 
     free(urlcpy);
 }
@@ -154,9 +154,9 @@ void irc_shorten_and_title(const char* url, url_title_cb callback, void* param) 
     tcb->callback = callback;
     tcb->param = param;
 
-    make_http_request_cb(url,NULL,2*1024*1024,irc_shorten_and_title_cb,tcb);	
+    make_http_request_cb(url,NULL,NULL,2*1024*1024,irc_shorten_and_title_cb,tcb);	
 
-    free(urlcpy);
+    //free(urlcpy);
 }
 
 char* irc_shorten(const char* url) {
@@ -169,5 +169,5 @@ char* irc_shorten(const char* url) {
 
     free(escurl);
 
-    return make_http_request(vgdurl,0,0);
+    return make_http_request(vgdurl,0,NULL,0);
 }

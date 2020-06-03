@@ -273,7 +273,7 @@ void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
 
 	}
 		
-	printf("> %s\n",out_title);
+	//printf("> %s\n",out_title);
 	respond(ctx->session,NULL,ctx->channel,out_title);
 
 	//old version
@@ -334,7 +334,6 @@ bool url_titlable(const char* url) {
     //if (strstr(url,"reddit.com/")) return true;
     if (strstr(url,"themoscowtimes.com/")) return true;
     if (strstr(url,"redd.it/")) return true;
-    if (strstr(url,"twitter.com/")) return true;
     return false;
 }
 void find_urls(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count) {

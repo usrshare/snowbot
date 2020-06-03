@@ -152,7 +152,7 @@ int get_exchange_rates(int o_c, struct exchange_rate* o_v) {
 	char* xchgurl = BASEURL "latest.json?app_id=" APPID;
 
 	printf("URL: %s\n",xchgurl);
-	char* response = make_http_request(xchgurl,NULL,0);
+	char* response = make_http_request(xchgurl,NULL,NULL,0);
 
 	if (!response) return 1;
 

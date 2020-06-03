@@ -76,12 +76,13 @@ char* http_escape_url(const char* url, int length) {
 struct async_request_params {
     char* restrict url;
     char* restrict postfields;
+    const char* useragent;
     size_t maxdl;
     http_recv_cb callback;
     void* cbparam;
 };
 
-char* make_http_request(const char* restrict url, const char* restrict postfields, size_t maxdl) {
+char* make_http_request(const char* restrict url, const char* restrict postfields, const char* restrict useragent, size_t maxdl) {
 
     CURL* httpreq = curl_easy_init();
     if (!httpreq) return NULL;
@@ -98,6 +99,10 @@ char* make_http_request(const char* restrict url, const char* restrict postfield
 	sprintf(rangetext,"0-%zu", maxdl-1);
 	curl_easy_setopt(httpreq, CURLOPT_RANGE, rangetext);
 	curl_easy_setopt(httpreq, CURLOPT_MAXFILESIZE, maxdl);
+    }
+
+    if (useragent) {
+	curl_easy_setopt(httpreq, CURLOPT_USERAGENT, useragent);
     }
 
     curl_easy_setopt(httpreq, CURLOPT_NOSIGNAL, 1);
@@ -123,7 +128,7 @@ static void* async_request_thread (void* param) {
 
     struct async_request_params* ctx = param;
     
-    char* restext = make_http_request(ctx->url,ctx->postfields,ctx->maxdl);
+    char* restext = make_http_request(ctx->url,ctx->postfields,ctx->useragent,ctx->maxdl);
 
     ctx->callback(restext,ctx->cbparam);
 
@@ -134,7 +139,7 @@ static void* async_request_thread (void* param) {
     return NULL;
 }
 
-void make_http_request_cb(const char* restrict url, const char* restrict postfields, size_t maxdl, http_recv_cb callback, void* cbparam) {
+void make_http_request_cb(const char* restrict url, const char* restrict postfields, const char* restrict useragent, size_t maxdl, http_recv_cb callback, void* cbparam) {
 
     struct async_request_params* ap = malloc(sizeof(struct async_request_params));
 
@@ -142,6 +147,7 @@ void make_http_request_cb(const char* restrict url, const char* restrict postfie
     ap->postfields = (postfields ? strdup(postfields) : NULL);
     ap->maxdl = maxdl;
     ap->callback = callback;
+    ap->useragent = useragent;
     ap->cbparam = cbparam;
 
     pthread_t httpthread;
