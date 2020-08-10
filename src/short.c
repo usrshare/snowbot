@@ -80,6 +80,7 @@ void irc_imgur_title_cb(const char* data, void* param) {
 
     if (tcb->callback) tcb->callback(tcb->n, tcb->url, title, tcb->param);
     free(title);
+    free(param);
     return;
 }
 
@@ -109,11 +110,13 @@ void irc_shorten_and_title_cb(const char* data, void* param) {
 
     if (tcb->callback) tcb->callback(tcb->n, tcb->url, title, tcb->param);
     free(title);
+    free(param);
     return;
 }
 
 void irc_imgur_title(const char* url, url_title_cb callback, void* param) {
 
+    //param must be freed by the callback function
     char* urlcpy = strdup(url);
 
     char* hash = strchr(url,'#');
@@ -143,6 +146,7 @@ void irc_imgur_title(const char* url, url_title_cb callback, void* param) {
 
 void irc_shorten_and_title(const char* url, url_title_cb callback, void* param) {
 
+    //param must be freed by the callback function
     char* urlcpy = strdup(url);
 
     char* hash = strchr(url,'#');

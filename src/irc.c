@@ -62,8 +62,15 @@ struct irc_bot_params{
 int add_paste_line(irc_session_t* session, struct irc_user_params* up, const char* restrict string) {
 
     size_t cursize = (up->paste_text) ? strlen(up->paste_text) : 0;
-    up->paste_size = cursize + 2 + strlen(string);
-    up->paste_text = realloc(up->paste_text,up->paste_size);
+    up->paste_size = cursize + 1 + strlen(string) + 1;
+
+    char* new_paste_text = realloc(up->paste_text,up->paste_size);
+    if (up->paste_text == NULL) {
+	printf("realloc failed!\n");
+	return 1;
+    } else {
+	up->paste_text = new_paste_text;
+    }
 
     if (cursize) {
 	strcpy(up->paste_text + cursize,"\n");
@@ -184,12 +191,29 @@ int handle_msg(irc_session_t* session, const char* restrict origin, const char* 
 				  up->mode = BM_NONE;
 				  free(resurl);
 			      } else {
-				  if (msg[1] == '.') add_paste_line(session,up,msg+1);
+				  if (msg[1] == '.') {
+				      int r = add_paste_line(session,up,msg+1);
+				      if (r != 0) {
+					  respond(session,nick,channel,"Not enough memory to add another string. Sorry.");
+					  if (up->paste_text) free(up->paste_text);
+					  up->paste_text = NULL;
+					  up->paste_size = 0;
+					  up->mode = BM_NONE;
+				      }
+				  }
 			      }
+
 
 			      break; }
 		default: {
-			     add_paste_line(session,up,msg);
+			     int r = add_paste_line(session,up,msg+1);
+			     if (r != 0) {
+				 respond(session,nick,channel,"Not enough memory to add another string. Sorry.");
+				 if (up->paste_text) free(up->paste_text);
+				 up->paste_text = NULL;
+				 up->paste_size = 0;
+				 up->mode = BM_NONE;
+			     }
 			     break; }
 	    }
 	    break;
@@ -255,41 +279,41 @@ void irc_url_title_cb(int n, const char* url, const char* title, void* param) {
 	strncat(out_title, curtok, left); left -= strlen(curtok);
 
 	while (curtok != NULL) {
-	    
+
 	    curtok = strtok_r(NULL,"\n\r",&saveptr);
-	
+
 	    if (curtok) {
 		printf("%d %s\n",left,curtok);
 
-	    if (left > (strlen(title_linesep) + strlen(curtok) + strlen(title_linebrk)) ) {
-	    strncat(out_title, title_linesep, left); left -= strlen(title_linesep);
-	    strncat(out_title, curtok, left); left -= strlen(curtok);
-	    } else if (left > strlen(title_linebrk)) {
-		strncat(out_title, title_linebrk, left); left -= strlen(title_linebrk);
-		break;
-	    }
+		if (left > (strlen(title_linesep) + strlen(curtok) + strlen(title_linebrk)) ) {
+		    strncat(out_title, title_linesep, left); left -= strlen(title_linesep);
+		    strncat(out_title, curtok, left); left -= strlen(curtok);
+		} else if (left > strlen(title_linebrk)) {
+		    strncat(out_title, title_linebrk, left); left -= strlen(title_linebrk);
+		    break;
+		}
 
 	    }
 
 	}
-		
+
 	//printf("> %s\n",out_title);
 	respond(ctx->session,NULL,ctx->channel,out_title);
 
 	//old version
 	/*ircprintf(ctx->session,NULL,ctx->channel,"Title: \00312%s\017",curtok);
-	
-	while (curtok != NULL) {
-	    curtok = strtok_r(NULL,"\n\r",&saveptr);
-	
-	    if (curtok) 
-		ircprintf(ctx->session,NULL,ctx->channel,"     > \00312%s\017",curtok);
-	}*/
+
+	  while (curtok != NULL) {
+	  curtok = strtok_r(NULL,"\n\r",&saveptr);
+
+	  if (curtok) 
+	  ircprintf(ctx->session,NULL,ctx->channel,"     > \00312%s\017",curtok);
+	  }*/
 
     }
 
-    if (ctx->nick) free(ctx->nick);
-    if (ctx->channel) free (ctx->channel);
+    if (ctx->nick) { free(ctx->nick); ctx->nick = 0; }
+    if (ctx->channel) { free (ctx->channel); ctx->channel = 0;}
     if (ctx) free (ctx); 
 }
 
