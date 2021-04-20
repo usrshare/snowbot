@@ -172,8 +172,8 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
     for (int i=0; i < (wdata->weather_c); i++) {
 	const struct weather_id* wid = getwid(wdata->weather_id[i]);
 	if (wid->format_on)
-	    snprintf(weathertmp,256,"%s%s%s,",format_on(wid,up),wid->description,wid->format_off); else
-		snprintf(weathertmp,256,"%s,",wid->description);
+	    snprintf(weathertmp,256,"%s%s%s, ",format_on(wid,up),wid->description,wid->format_off); else
+		snprintf(weathertmp,256,"%s, ",wid->description);
 	weathermsg = strrecat(weathermsg,weathertmp);
     }
 
@@ -181,7 +181,19 @@ int handle_weather_current(irc_session_t* session, const char* restrict nick, co
 
     format_temp(wdata->main_temp, up, &fmtst, &fmted);
 
+    enum weather_modes second_mode;
+    if (up->wmode == WM_CELSIUS) second_mode = WM_FAHRENHEIT;
+    if (up->wmode == WM_FAHRENHEIT) second_mode = WM_CELSIUS;
+    if (up->wmode == WM_KELVIN) second_mode = WM_KELVIN;
+
     snprintf (weathertmp,255,"%s%+.1f%s%s",fmtst,convert_temp(wdata->main_temp,up->wmode),wmode_desc(up->wmode),fmted);
+
+    if (second_mode != up->wmode) {
+    
+	weathermsg = strrecat(weathermsg,weathertmp);
+	
+	snprintf (weathertmp,255,"/%s%+.1f%s%s",fmtst,convert_temp(wdata->main_temp,second_mode),wmode_desc(second_mode),fmted);
+    }
 
     weathermsg = strrecat(weathermsg,weathertmp);
 
@@ -244,7 +256,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
     char weathertmp[512];
 
-    snprintf (weathermsg,128,"d#:");
+    snprintf (weathermsg,128," day #:");
 
     char weathertmp2[32];
     memset(weathertmp,0,sizeof weathertmp);
@@ -266,28 +278,33 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
     weathermsg = strrecat(weathermsg,weathertmp);
 
     respond(session,nick,channel,weathermsg);
+    
+    char* fmtst = ""; char* fmted = "";
 
-    snprintf (weathermsg,128,"%s:",wmode_desc(up->wmode));
+    snprintf (weathermsg,128,"day %s:",wmode_desc(up->wmode));
 
     memset(weathertmp,0,sizeof weathertmp);
     for (int i=0; i<cnt; i++) {
-	snprintf(weathertmp2,16,"\00308%3d \017",(int)round(convert_temp((wdata+i)->temp_day,up->wmode)));
+	
+	format_temp(wdata[i].temp_day, up, &fmtst, &fmted);
+	snprintf(weathertmp2,16,"%s%3d %s",fmtst,(int)round(convert_temp((wdata+i)->temp_day,up->wmode)),fmted);
 	strcat(weathertmp,weathertmp2);
     }
     weathermsg = strrecat(weathermsg,weathertmp);
     respond(session,nick,channel,weathermsg);
 
-    snprintf (weathermsg,128,"%s:",wmode_desc(up->wmode));
+    snprintf (weathermsg,128,"nite%s:",wmode_desc(up->wmode));
 
     memset(weathertmp,0,sizeof weathertmp);
     for (int i=0; i<cnt; i++) {
-	snprintf(weathertmp2,16,"\00312%3d \017",(int)round(convert_temp((wdata+i)->temp_night,up->wmode)));
+	format_temp(wdata[i].temp_night, up, &fmtst, &fmted);
+	snprintf(weathertmp2,16,"%s%3d %s",fmtst,(int)round(convert_temp((wdata+i)->temp_night,up->wmode)),fmted);
 	strcat(weathertmp,weathertmp2);
     }
     weathermsg = strrecat(weathermsg,weathertmp);
     respond(session,nick,channel,weathermsg);
 
-    snprintf (weathermsg,128,"wd:");
+    snprintf (weathermsg,128,"  wind:");
 
     for (int i=0; i<cnt; i++) {
 
@@ -308,7 +325,7 @@ int handle_long_forecast(irc_session_t* session, const char* restrict nick, cons
 
     for (int c=0; c < wcnt; c++) {
 
-	snprintf (weathermsg,128,"sp:");
+	snprintf (weathermsg,128,"status:");
 
 	memset(weathertmp,0,sizeof weathertmp);
 	//char weathertmp3[16];

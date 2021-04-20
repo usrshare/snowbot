@@ -352,8 +352,8 @@ bool check_if_in_notify(const char* url) {
 
 bool url_titlable(const char* url) {
 
-    if (strstr(url,"youtube.com/")) return true;
-    if (strstr(url,"youtu.be/")) return true;
+    //if (strstr(url,"youtube.com/")) return true;
+    //if (strstr(url,"youtu.be/")) return true;
     if (strstr(url,"vimeo.com/")) return true;
     //if (strstr(url,"reddit.com/")) return true;
     if (strstr(url,"themoscowtimes.com/")) return true;
